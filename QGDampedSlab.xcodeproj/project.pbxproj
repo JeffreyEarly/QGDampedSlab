@@ -8,10 +8,22 @@
 
 /* Begin PBXBuildFile section */
 		81674B3519D9DB45008FFFC5 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 81674B3419D9DB45008FFFC5 /* main.m */; };
+		81674B3C19D9DBF7008FFFC5 /* GLNumericalModelingKit.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 81674B3B19D9DBF7008FFFC5 /* GLNumericalModelingKit.dylib */; };
+		81674B4419D9DF71008FFFC5 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 81674B4319D9DF71008FFFC5 /* main.m */; };
+		81674B4819D9DFA8008FFFC5 /* GLNumericalModelingKit.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 81674B3B19D9DBF7008FFFC5 /* GLNumericalModelingKit.dylib */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		81674B2F19D9DB45008FFFC5 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		81674B3F19D9DF71008FFFC5 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = /usr/share/man/man1/;
@@ -25,6 +37,9 @@
 /* Begin PBXFileReference section */
 		81674B3119D9DB45008FFFC5 /* QGDampedSlab */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = QGDampedSlab; sourceTree = BUILT_PRODUCTS_DIR; };
 		81674B3419D9DB45008FFFC5 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		81674B3B19D9DBF7008FFFC5 /* GLNumericalModelingKit.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = GLNumericalModelingKit.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		81674B4119D9DF71008FFFC5 /* DampedSlab */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DampedSlab; sourceTree = BUILT_PRODUCTS_DIR; };
+		81674B4319D9DF71008FFFC5 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -32,6 +47,15 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				81674B3C19D9DBF7008FFFC5 /* GLNumericalModelingKit.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		81674B3E19D9DF71008FFFC5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				81674B4819D9DFA8008FFFC5 /* GLNumericalModelingKit.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -42,7 +66,9 @@
 			isa = PBXGroup;
 			children = (
 				81674B3319D9DB45008FFFC5 /* QGDampedSlab */,
+				81674B4219D9DF71008FFFC5 /* DampedSlab */,
 				81674B3219D9DB45008FFFC5 /* Products */,
+				81674B3B19D9DBF7008FFFC5 /* GLNumericalModelingKit.dylib */,
 			);
 			sourceTree = "<group>";
 		};
@@ -50,6 +76,7 @@
 			isa = PBXGroup;
 			children = (
 				81674B3119D9DB45008FFFC5 /* QGDampedSlab */,
+				81674B4119D9DF71008FFFC5 /* DampedSlab */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -60,6 +87,14 @@
 				81674B3419D9DB45008FFFC5 /* main.m */,
 			);
 			path = QGDampedSlab;
+			sourceTree = "<group>";
+		};
+		81674B4219D9DF71008FFFC5 /* DampedSlab */ = {
+			isa = PBXGroup;
+			children = (
+				81674B4319D9DF71008FFFC5 /* main.m */,
+			);
+			path = DampedSlab;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -82,6 +117,23 @@
 			productReference = 81674B3119D9DB45008FFFC5 /* QGDampedSlab */;
 			productType = "com.apple.product-type.tool";
 		};
+		81674B4019D9DF71008FFFC5 /* DampedSlab */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 81674B4519D9DF71008FFFC5 /* Build configuration list for PBXNativeTarget "DampedSlab" */;
+			buildPhases = (
+				81674B3D19D9DF71008FFFC5 /* Sources */,
+				81674B3E19D9DF71008FFFC5 /* Frameworks */,
+				81674B3F19D9DF71008FFFC5 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = DampedSlab;
+			productName = DampedSlab;
+			productReference = 81674B4119D9DF71008FFFC5 /* DampedSlab */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -92,6 +144,9 @@
 				ORGANIZATIONNAME = "Jeffrey J. Early";
 				TargetAttributes = {
 					81674B3019D9DB45008FFFC5 = {
+						CreatedOnToolsVersion = 6.0.1;
+					};
+					81674B4019D9DF71008FFFC5 = {
 						CreatedOnToolsVersion = 6.0.1;
 					};
 				};
@@ -109,6 +164,7 @@
 			projectRoot = "";
 			targets = (
 				81674B3019D9DB45008FFFC5 /* QGDampedSlab */,
+				81674B4019D9DF71008FFFC5 /* DampedSlab */,
 			);
 		};
 /* End PBXProject section */
@@ -119,6 +175,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				81674B3519D9DB45008FFFC5 /* main.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		81674B3D19D9DF71008FFFC5 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				81674B4419D9DF71008FFFC5 /* main.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -202,6 +266,15 @@
 		81674B3919D9DB45008FFFC5 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					"$(BUILT_PRODUCTS_DIR)/usr/local/include",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(USER_LIBRARY_DIR)/Developer/Xcode/DerivedData/QGDampedSlab-fphdwedzqugbnhesewncirqzzjsn/Build/Products/Debug",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -209,6 +282,43 @@
 		81674B3A19D9DB45008FFFC5 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					"$(BUILT_PRODUCTS_DIR)/usr/local/include",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(USER_LIBRARY_DIR)/Developer/Xcode/DerivedData/QGDampedSlab-fphdwedzqugbnhesewncirqzzjsn/Build/Products/Debug",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		81674B4619D9DF71008FFFC5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					"$(BUILT_PRODUCTS_DIR)/usr/local/include",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		81674B4719D9DF71008FFFC5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					"$(BUILT_PRODUCTS_DIR)/usr/local/include",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -230,6 +340,15 @@
 			buildConfigurations = (
 				81674B3919D9DB45008FFFC5 /* Debug */,
 				81674B3A19D9DB45008FFFC5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		81674B4519D9DF71008FFFC5 /* Build configuration list for PBXNativeTarget "DampedSlab" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				81674B4619D9DF71008FFFC5 /* Debug */,
+				81674B4719D9DF71008FFFC5 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 		};

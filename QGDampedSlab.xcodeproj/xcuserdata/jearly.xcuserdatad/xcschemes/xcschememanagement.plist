@@ -4,15 +4,25 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
+		<key>DampedSlab.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>4</integer>
+		</dict>
 		<key>QGDampedSlab.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>0</integer>
+			<integer>1</integer>
 		</dict>
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
 		<key>81674B3019D9DB45008FFFC5</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>81674B4019D9DF71008FFFC5</key>
 		<dict>
 			<key>primary</key>
 			<true/>
