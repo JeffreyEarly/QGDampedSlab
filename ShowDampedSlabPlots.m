@@ -1,4 +1,4 @@
-file = '/Volumes/Data/QGPlusSlab/WindForcedFPlane.nc';
+file = '/Volumes/Data/QGPlusSlab/WindForcedFPlane2.nc';
 t = ncread(file, 'time');
 x = ncread(file, 'x');
 y = ncread(file, 'y');

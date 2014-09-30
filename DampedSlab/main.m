@@ -132,7 +132,7 @@ int main(int argc, const char * argv[])
 		
 		CGFloat cfl = 0.5;
 		GLFloat timeStep = cfl * xDim.sampleInterval / sqrt(g1*H0);
-		timeStep = 600;
+		timeStep = 300;
 		
 		/************************************************************************************************/
 		/*		Create the integration object.															*/
@@ -154,8 +154,22 @@ int main(int argc, const char * argv[])
 		//
 		//		[fu solve]; [fv solve]; [fh solve];
 		
-		GLRungeKuttaOperation *integrator = [GLAdaptiveRungeKuttaOperation rungeKutta23AdvanceY: @[u0, v0, h0] stepSize: timeStep fFromTY:^(GLScalar *t, NSArray *yNew) {
-			
+//		printf("\nA=[");
+//		for (GLFloat time = 0; time < maxTime; time += 300)
+//		{
+//			@autoreleasepool {
+//				
+//				GLScalar *t = [GLScalar scalarWithValue: time forEquation: equation];
+//				GLSimpleInterpolationOperation *interp = [[GLSimpleInterpolationOperation alloc] initWithFirstOperand:  @[tau_x, tau_y] secondOperand: @[t]];
+//				GLFunction *tx = interp.result[0];
+//				GLFunction *ty = interp.result[1];
+//				printf("%g\t%g;\n",*(tx.pointerValue), *(ty.pointerValue));
+//			}
+//		}
+//		printf("]\n");
+		
+		GLAdaptiveRungeKuttaOperation *integrator = [GLAdaptiveRungeKuttaOperation rungeKutta23AdvanceY: @[u0, v0, h0] stepSize: timeStep fFromTY:^(GLScalar *t, NSArray *yNew) {
+		//GLRungeKuttaOperation *integrator = [GLAdaptiveRungeKuttaOperation rungeKutta4AdvanceY: @[u0, v0, h0] stepSize: timeStep fFromTY:^(GLScalar *t, NSArray *yNew) {
 			GLSimpleInterpolationOperation *interp = [[GLSimpleInterpolationOperation alloc] initWithFirstOperand:  @[tau_x, tau_y] secondOperand: @[t]];
 			GLFunction *tx = interp.result[0];
 			GLFunction *ty = interp.result[1];
@@ -175,6 +189,9 @@ int main(int argc, const char * argv[])
 			return f;
 		}];
 		
+//		integrator.relativeTolerance = @[ @(1e-4)];
+//		integrator.absoluteTolerance = @[ @(1e-6)];
+		
 		/************************************************************************************************/
 		/*		Step forward in time, and write the data to file every-so-often.						*/
 		/************************************************************************************************/
@@ -191,6 +208,8 @@ int main(int argc, const char * argv[])
 				[uHistory concatenateWithLowerDimensionalVariable: yin[0] alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
 				[vHistory concatenateWithLowerDimensionalVariable: yin[1] alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
 				[hHistory concatenateWithLowerDimensionalVariable: yin[2] alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
+				
+				[netcdfFile waitUntilAllOperationsAreFinished];
 			}
 		}
 		
