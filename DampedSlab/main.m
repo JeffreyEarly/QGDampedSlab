@@ -154,20 +154,6 @@ int main(int argc, const char * argv[])
 		//
 		//		[fu solve]; [fv solve]; [fh solve];
 		
-//		printf("\nA=[");
-//		for (GLFloat time = 0; time < maxTime; time += 300)
-//		{
-//			@autoreleasepool {
-//				
-//				GLScalar *t = [GLScalar scalarWithValue: time forEquation: equation];
-//				GLSimpleInterpolationOperation *interp = [[GLSimpleInterpolationOperation alloc] initWithFirstOperand:  @[tau_x, tau_y] secondOperand: @[t]];
-//				GLFunction *tx = interp.result[0];
-//				GLFunction *ty = interp.result[1];
-//				printf("%g\t%g;\n",*(tx.pointerValue), *(ty.pointerValue));
-//			}
-//		}
-//		printf("]\n");
-		
 		GLAdaptiveRungeKuttaOperation *integrator = [GLAdaptiveRungeKuttaOperation rungeKutta23AdvanceY: @[u0, v0, h0] stepSize: timeStep fFromTY:^(GLScalar *t, NSArray *yNew) {
 		//GLRungeKuttaOperation *integrator = [GLAdaptiveRungeKuttaOperation rungeKutta4AdvanceY: @[u0, v0, h0] stepSize: timeStep fFromTY:^(GLScalar *t, NSArray *yNew) {
 			GLSimpleInterpolationOperation *interp = [[GLSimpleInterpolationOperation alloc] initWithFirstOperand:  @[tau_x, tau_y] secondOperand: @[t]];

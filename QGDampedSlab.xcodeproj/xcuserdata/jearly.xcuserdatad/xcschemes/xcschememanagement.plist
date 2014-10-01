@@ -7,6 +7,11 @@
 		<key>DampedSlab.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
+			<integer>3</integer>
+		</dict>
+		<key>DampedSlabSwift.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
 			<integer>4</integer>
 		</dict>
 		<key>QGDampedSlab.xcscheme</key>
@@ -23,6 +28,11 @@
 			<true/>
 		</dict>
 		<key>81674B4019D9DF71008FFFC5</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>818772BD19DB29A4007E5DA3</key>
 		<dict>
 			<key>primary</key>
 			<true/>
