@@ -8,6 +8,7 @@
 
 #import <Foundation/Foundation.h>
 #import <GLNumericalModelingKit/GLNumericalModelingKit.h>
+#import <GLOceanKit/GLOceanKit.h>
 
 int main (int argc, const char * argv[])
 {
@@ -20,6 +21,11 @@ int main (int argc, const char * argv[])
 		GLFloat dRho2 = 1E-3;
 		GLFloat latitude = 24;
 		
+        GLFloat domainWidth = 100e3; // m
+        NSUInteger nPoints = 256;
+        NSUInteger aspectRatio = 1;
+        NSUInteger floatFraction = 2;
+        
 		GLFloat maxTime = 40*86400;
 		GLFloat dampingOrder=2; // order of the damping operator. Order 1 is harmonic, order 2 is biharmonic, etc.
 		GLFloat dampingTime=3600; // e-folding time scale of the Nyquist frequency.
@@ -32,144 +38,144 @@ int main (int argc, const char * argv[])
 		GLFloat beta = 2 * 7.2921E-5 * cos( latitude*M_PI/180. ) / R;
 		GLFloat gprime = dRho1 * g;
 		GLFloat rho_water = 1025;
+        GLFloat h2 = dRho2*H2;
 		GLFloat L_1 = sqrt( gprime * H1) / f0;
 		GLFloat L_2 = sqrt( gprime * H2) / f0;
-		GLFloat u_scale = f0/(beta*L_2);
-		GLFloat tau_scale = 1./( rho_water*H1*beta*beta*L_2*L_2*L_2);
-		GLFloat div_scale = u_scale*(L_1*L_1)/(L_2*L_2);
+
 		
-		GLEquation *equation = [[GLEquation alloc] init];
-		GLNetCDFFile *restartFile = [[GLNetCDFFile alloc] initWithURL: [NSURL URLWithString: @"/Volumes/Data/ForcedDissipativeQGTurbulence/QGTurbulenceRestart_kFrac_16.nc"] forEquation: equation];
+        
+        GLDimension *xDim = [[GLDimension alloc] initDimensionWithGrid: kGLPeriodicGrid nPoints:nPoints domainMin:-domainWidth/2.0 length:domainWidth];
+        xDim.name = @"x"; xDim.units = @"m";
+        GLDimension *yDim = [[GLDimension alloc] initDimensionWithGrid: kGLPeriodicGrid nPoints:nPoints/aspectRatio domainMin:-domainWidth/(2.0*aspectRatio) length: domainWidth/aspectRatio];
+        yDim.name = @"y"; yDim.units = @"m";
+        GLMutableDimension *tDim = [[GLMutableDimension alloc] initWithPoints: @[@(0.0)]];
+        tDim.name = @"time"; tDim.units = @"s";
+        GLEquation *equation = [[GLEquation alloc] init];
+        
+        /************************************************************************************************/
+        /*		Spin up the lower (QG) layer															*/
+        /************************************************************************************************/
+        
+        NSURL *restartFile = [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent:@"QGTurbulence.nc"];
+        NSFileManager *fileManager = [[NSFileManager alloc] init];
+        
+        if (![fileManager fileExistsAtPath: restartFile.path])
+        {
+            Quasigeostrophy2D *qg = [[Quasigeostrophy2D alloc] initWithDimensions: @[xDim, yDim] depth: h2 latitude: latitude equation: equation];
+            
+            qg.shouldUseBeta = NO;
+            qg.shouldUseSVV = YES;
+            qg.shouldAntiAlias = NO;
+            qg.shouldForce = YES;
+            qg.forcingFraction = 16;
+            qg.forcingWidth = 1;
+            qg.f_zeta = 10;
+            qg.forcingDecorrelationTime = HUGE_VAL;
+            qg.thermalDampingFraction = 0.0;
+            qg.frictionalDampingFraction = 2.0;
+            
+            qg.outputFile = restartFile;
+            qg.shouldAdvectFloats = NO;
+            qg.shouldAdvectTracer = NO;
+            qg.outputInterval = 10*86400.;
+            
+            [qg runSimulationToTime: 700*86400];
+        }
+        
+        /************************************************************************************************/
+        /*		Create the integrator for the unforced QG layer											*/
+        /************************************************************************************************/
+        
+        Quasigeostrophy2D *qg = [[Quasigeostrophy2D alloc] initWithFile:restartFile resolutionDoubling:NO equation: equation];
+        qg.shouldForce = NO;
+        
+        /************************************************************************************************/
+        /*		Create the initial conditions for the slab layer                                        */
+        /************************************************************************************************/
+        
+        NSArray *spatialDimensions = @[xDim, yDim];
+        GLFunction *x = [GLFunction functionOfRealTypeFromDimension: xDim withDimensions: spatialDimensions forEquation: equation];
+        GLFunction *y = [GLFunction functionOfRealTypeFromDimension: yDim withDimensions: spatialDimensions forEquation: equation];
+        
+        GLFunction *h0 = [GLFunction functionOfRealTypeWithDimensions: spatialDimensions forEquation: equation];
+        GLFunction *u0 = [GLFunction functionOfRealTypeWithDimensions: spatialDimensions forEquation: equation];
+        GLFunction *v0 = [GLFunction functionOfRealTypeWithDimensions: spatialDimensions forEquation: equation];
+        
+        h0 = [h0 setValue: H1 atIndices: @":,:"];
+        [u0 zero];
+        [v0 zero];
 		
-		GLFloat k_f = [restartFile.globalAttributes[@"forcing_wavenumber"] doubleValue];
-		GLFloat forcingWidth = [restartFile.globalAttributes[@"forcing_width"] doubleValue];
-		GLFloat nu = [restartFile.globalAttributes[@"nu"] doubleValue];
-		GLFloat alpha = [restartFile.globalAttributes[@"alpha"] doubleValue];
-		GLFloat energy = [restartFile.globalAttributes[@"energy"] doubleValue];
-		BOOL shouldUseSVV = [restartFile.globalAttributes[@"uses-spectral-vanishing-viscosity"] boolValue];
-		
-		[GLBasisTransformOperation setShouldAntialias: [restartFile.globalAttributes[@"is-anti-aliased"] boolValue]];
-		
-		GLFloat T_QG = [restartFile.globalAttributes[@"time_scale"] doubleValue] /86400; // days
-		
-		maxTime = 10;
-		
-		BOOL writeExtrasToFile = NO;
-		
-		/************************************************************************************************/
-		/*		Read the winds from file																*/
-		/************************************************************************************************/
-		
-		// If all goes well, the variable t will be identified as the coordinated variable and therefore turned into a dimension, leaving only u and v.
-		GLNetCDFFile *winds = [[GLNetCDFFile alloc] initWithURL: [NSURL URLWithString: @"/Volumes/Data/QGPlusSlab/winds.nc"] forEquation: equation];
-		GLFunction *u_wind = winds.variables[0];
-		GLFunction *v_wind = winds.variables[1];
-		
+        /************************************************************************************************/
+        /*		Read the winds from file																*/
+        /************************************************************************************************/
+        
+        // If all goes well, the variable t will be identified as the coordinated variable and therefore turned into a dimension, leaving only u and v.
+        GLNetCDFFile *winds = [[GLNetCDFFile alloc] initWithURL: [NSURL URLWithString: @"/Users/jearly/Documents/Models/QGDampedSlab/winds.nc"] forEquation: equation];
+        GLFunction *u_wind = winds.variables[0];
+        GLFunction *v_wind = winds.variables[1];
+        
 #warning For some reason I get total crap if I don't convert from a NetCDFVariable to a regular variable.
-		u_wind = [GLFunction functionFromFunction: u_wind];
-		v_wind = [GLFunction functionFromFunction: v_wind];
-		
-		GLFloat rho_air = 1.25;
-		GLFunction *speed_wind = [[[u_wind times: u_wind] plus: [v_wind times: v_wind]] sqrt];
-		GLFunction *dragCoefficient = [[[speed_wind scalarMultiply: 0.071] scalarAdd: 0.50] scalarMultiply: 1e-3];
-		GLFunction *tau_x = [[[u_wind times: speed_wind] times: dragCoefficient] scalarMultiply: rho_air];
-		GLFunction *tau_y = [[[v_wind times: speed_wind] times: dragCoefficient] scalarMultiply: rho_air];
-		
-		[tau_x solve];
-		[tau_y solve];
-		
-		
-		/************************************************************************************************/
-		/*		Define the problem dimensions															*/
-		/************************************************************************************************/
-		
-		GLDimension *xDim = restartFile.dimensions[0];
-		GLDimension *yDim = restartFile.dimensions[1];
-		
-		GLMutableDimension *tDim = [[GLMutableDimension alloc] initWithPoints: @[@(0.0)]];
-		tDim.name = @"time";
-		
-		// Variables are always tied to a particular equation---so we create an equation object first.
-		[equation setDefaultDifferentiationBasis: @[@(kGLExponentialBasis), @(kGLExponentialBasis)] forOrder: 2];
-		
-		GLVariable *ssh = restartFile.variables[0];
-		[ssh solve];
-		
-		NSArray *spatialDimensions = @[xDim, yDim];
-		GLVariable *x = [GLVariable variableOfRealTypeFromDimension: xDim withDimensions: spatialDimensions forEquation: equation];
-		GLVariable *y = [GLVariable variableOfRealTypeFromDimension: yDim withDimensions: spatialDimensions forEquation: equation];
+        u_wind = [GLFunction functionFromFunction: u_wind];
+        v_wind = [GLFunction functionFromFunction: v_wind];
+        
+        GLFloat rho_air = 1.25;
+        GLFloat tau_scale = 1./( rho_water*H1*beta*beta*L_2*L_2*L_2); // Nondimensionalization factor
+        GLFunction *speed_wind = [[[u_wind times: u_wind] plus: [v_wind times: v_wind]] sqrt];
+        GLFunction *dragCoefficient = [[[speed_wind scalarMultiply: 0.071] scalarAdd: 0.50] scalarMultiply: 1e-3];
+        GLFunction *tau_x = [[[[u_wind times: speed_wind] times: dragCoefficient] scalarMultiply: rho_air] times: @(tau_scale)];
+        GLFunction *tau_y = [[[[v_wind times: speed_wind] times: dragCoefficient] scalarMultiply: rho_air] times: @(tau_scale)];
+        
+        [tau_x solve];
+        [tau_y solve];
 		
 		/************************************************************************************************/
-		/*		Create and cache the differential operators we will need								*/
+		/*		Plop down floats                                                                        */
 		/************************************************************************************************/
 		
-		// At the moment we know that this is the spectral operators, although in the future we'll have to set this up explicitly.
-		GLSpectralDifferentialOperatorPool *diffOperators = [equation defaultDifferentialOperatorPoolForVariable: ssh];
+        GLDimension *xFloatDim = [[GLDimension alloc] initDimensionWithGrid: xDim.gridType nPoints: xDim.nPoints/floatFraction domainMin: xDim.domainMin length:xDim.domainLength];
+        xFloatDim.name = @"x-float";
+        GLDimension *yFloatDim = [[GLDimension alloc] initDimensionWithGrid: yDim.gridType nPoints: yDim.nPoints/floatFraction domainMin: yDim.domainMin length:yDim.domainLength];
+        yFloatDim.name = @"y-float";
+        
+        NSArray *floatDims = @[xFloatDim, yFloatDim];
+        GLFunction *xPosition = [GLFunction functionOfRealTypeFromDimension: xFloatDim withDimensions: floatDims forEquation: equation];
+        GLFunction *yPosition = [GLFunction functionOfRealTypeFromDimension: yFloatDim withDimensions: floatDims forEquation: equation];
 		
-		// Create the operator xx+yy-1---this is how you compute y from eta
-		GLSpectralDifferentialOperator *laplacianMinusOne = [[diffOperators harmonicOperator] scalarAdd: -1.0];
-		[diffOperators setDifferentialOperator: laplacianMinusOne forName: @"laplacianMinusOne"];
+        /************************************************************************************************/
+        /*		Create a NetCDF file and mutable variables in order to record some of the time steps.	*/
+        /************************************************************************************************/
+        
+        GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [NSURL URLWithString: @"/Volumes/Data/QGPlusSlab/WindForcedFPlane2.nc"] forEquation: equation overwriteExisting: YES];
+        
+        GLMutableVariable *hHistory = [h0 variableByAddingDimension: tDim];
+        hHistory.name = @"h";
+        hHistory.units = @"m";
+        hHistory = [netcdfFile addVariable: hHistory];
+        
+        GLMutableVariable *uHistory = [u0 variableByAddingDimension: tDim];
+        uHistory.name = @"u";
+        uHistory.units = @"m/s";
+        uHistory = [netcdfFile addVariable: uHistory];
+        
+        GLMutableVariable *vHistory = [v0 variableByAddingDimension: tDim];
+        vHistory.name = @"v";
+        vHistory.units = @"m/s";
+        vHistory = [netcdfFile addVariable: vHistory];
 		
-		// Create the operator 1/(xx+yy-1)---this is how you compute eta from y.
-		[diffOperators setDifferentialOperator: [laplacianMinusOne scalarDivide: 1.0] forName: @"inverseLaplacianMinusOne"];
-		
-		// This builds the differentiation matrix diff_{xxx} + diff_{xyy}
-		[diffOperators setDifferentialOperator: [[diffOperators xxx] plus: [diffOperators xyy]] forName: @"diffJacobianX"];
-		
-		// This builds the differentiation matrix diff_{xxy} + diff_{yyy}
-		[diffOperators setDifferentialOperator: [[diffOperators xxy] plus: [diffOperators yyy]] forName: @"diffJacobianY"];
-		
-		/************************************************************************************************/
-		/*		Create and cache the differential operators we will need								*/
-		/************************************************************************************************/
-		
-		GLSpectralDifferentialOperator *viscosity;
-		if (shouldUseSVV) {
-			GLSpectralDifferentialOperator *svv = [diffOperators spectralVanishingViscosityFilter];
-			viscosity = [[[diffOperators harmonicOperatorOfOrder: 2] scalarMultiply: nu] multiply: svv];
-		} else {
-			viscosity = [[diffOperators harmonicOperatorOfOrder: 2] scalarMultiply: nu];
-		}
-		
-		viscosity = [viscosity scalarAdd: alpha];
-		
-		[diffOperators setDifferentialOperator: viscosity forName: @"diffLin"];
-		
-		
-		/************************************************************************************************/
-		/*		Plop down a float at each grid point													*/
-		/************************************************************************************************/
-		
-		GLVariable *xPosition = [GLVariable variableFromVariable: x];
-		GLVariable *yPosition = [GLVariable variableFromVariable: y];
-		
-		GLVariable *sshFD = [ssh frequencyDomain];
-		GLVariable *rv = [[ssh diff:@"harmonicOperator"] spatialDomain];
-		
-		/************************************************************************************************/
-		/*		Create a NetCDF file to record everything interesting.									*/
-		/************************************************************************************************/
-		
-		// Now we create a mutable variable in order to record the evolution of the Gaussian.
-		GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [NSURL URLWithString: @"/Volumes/Data/QGTurbulenceRestarted_2.nc"] forEquation: equation overwriteExisting: YES];
-		for (id key in restartFile.globalAttributes) {
-			[netcdfFile setGlobalAttribute: restartFile.globalAttributes[key] forKey: key];
-		}
-		
-		GLMutableVariable *sshHistory = [ssh variableByAddingDimension: tDim];
-		sshHistory.name = @"SSH";
-		sshHistory = [netcdfFile addVariable: sshHistory];
-		
-		GLMutableVariable *sshFDHistory, *rvHistory;
-		if (writeExtrasToFile) {
-			sshFDHistory = [sshFD variableByAddingDimension: tDim];
-			sshFDHistory.name = @"SSH_FD";
-			sshFDHistory = [netcdfFile addVariable: sshFDHistory];
-			
-			rvHistory = [rv variableByAddingDimension: tDim];
-			rvHistory.name = @"RV";
-			rvHistory = [netcdfFile addVariable: rvHistory];
-		}
+//		GLMutableVariable *sshHistory = [ssh variableByAddingDimension: tDim];
+//		sshHistory.name = @"SSH";
+//		sshHistory = [netcdfFile addVariable: sshHistory];
+//		
+//		GLMutableVariable *sshFDHistory, *rvHistory;
+//		if (writeExtrasToFile) {
+//			sshFDHistory = [sshFD variableByAddingDimension: tDim];
+//			sshFDHistory.name = @"SSH_FD";
+//			sshFDHistory = [netcdfFile addVariable: sshFDHistory];
+//			
+//			rvHistory = [rv variableByAddingDimension: tDim];
+//			rvHistory.name = @"RV";
+//			rvHistory = [netcdfFile addVariable: rvHistory];
+//		}
 		
 		GLMutableVariable *xPositionHistory = [xPosition variableByAddingDimension: tDim];
 		xPositionHistory.name = @"x-position";
@@ -179,53 +185,37 @@ int main (int argc, const char * argv[])
 		yPositionHistory.name = @"y-position";
 		yPositionHistory = [netcdfFile addVariable: yPositionHistory];
 		
-		/************************************************************************************************/
-		/*		Create an integrator for the qg equation												*/
-		/************************************************************************************************/
-		
-		CGFloat cfl = 0.5;
-		GLFloat viscous_dt = 0.1 * xDim.sampleInterval * xDim.sampleInterval / nu;
-		
-		GLVariable *zeta = [ssh diff: @"laplacianMinusOne"];
-		NSArray *yin = @[zeta, xPosition, yPosition];
-		
-		GLAdaptiveRungeKuttaOperation *qgIntegrator = [GLAdaptiveRungeKuttaOperation rungeKutta23AdvanceY: yin stepSize: viscous_dt fFromTY:^(GLVariable *time, NSArray *yNew) {
-			GLVariable *eta = [yNew[0] diff: @"inverseLaplacianMinusOne"];
-			GLVariable *f = [[eta diff:@"diffLin"] plus: [[[[eta y] times: [eta diff: @"diffJacobianX"]] minus: [[eta x] times: [eta diff: @"diffJacobianY"]]] frequencyDomain]];
-			
-			NSArray *uv = @[[[[eta y] spatialDomain] negate], [[eta x] spatialDomain] ];
-			NSArray *xy = @[yNew[1], yNew[2]];
-			GLInterpolationOperation *interp = [[GLInterpolationOperation alloc] initWithFirstOperand: uv secondOperand: xy];
-			
-			return @[f, interp.result[0], interp.result[1]];
-		}];
+        /************************************************************************************************/
+        /*		Determine an appropriate time step based on the CFL condition.							*/
+        /************************************************************************************************/
+        
+        CGFloat cfl = 0.5;
+        GLFloat timeStep = cfl * xDim.sampleInterval / sqrt(g*H1);
+        timeStep = 300;
 		
 		/************************************************************************************************/
 		/*		Determine an appropriate time step based on the CFL condition.							*/
 		/************************************************************************************************/
-		
-		GLFloat inertialTimeStep = 600/T_QG;
-		
-		GLVectorIntegrationOperation *integrator = [GLVectorIntegrationOperation rungeKutta4AdvanceY: yin stepSize: inertialTimeStep fFromTY:^(GLVariable *t, NSArray *yNew) {
-			
-			GLInterpolationOperation *interp = [[GLInterpolationOperation alloc] initWithFirstOperand: @[tau_x, tau_y] secondOperand: @[[t scalarMultiply: T_QG*86400]]];
-			GLVariable *tx = interp.result[0];
-			GLVariable *ty = interp.result[1];
-			
-			GLVariable *u = yNew[0];
-			GLVariable *v = yNew[1];
-			GLVariable *h = yNew[2];
-			
-			//			GLVariable *fu = [[[[v scalarMultiply: f] plus: [[tx scalarMultiply: 1/rho_water] dividedBy: h]] minus: [[[[h x] scalarMultiply: g1] minus: [u diff:@"damp"]] spatialDomain]] minus: [[u times: [u x]] plus: [v times: [u y]]]];
-			//            GLVariable *fv = [[[[u scalarMultiply: -f] plus: [[ty scalarMultiply: 1/rho_water] dividedBy: h]] minus: [[[[h y] scalarMultiply: g1] minus: [v diff:@"damp"]] spatialDomain]] minus: [[u times: [v x]] plus: [v times: [v y]]]];
-			
-			GLVariable *fu = [[[v scalarMultiply: u_scale] plus: [tx scalarMultiply: tau_scale]] minus: [[[[h x] scalarMultiply: u_scale] minus: [u diff:@"damp"]] spatialDomain]];
-			GLVariable *fv = [[[u scalarMultiply: -u_scale] plus: [ty scalarMultiply: tau_scale]] minus: [[[[h y] scalarMultiply: u_scale] minus: [v diff:@"damp"]] spatialDomain]];
-			GLVariable *fh = [[[[u x] plus: [v y]] scalarMultiply:div_scale] negate];
-			
-			NSArray *f = @[fu, fv, fh];
-			return f;
-		}];
+        
+        GLFloat u_scale = f0/(beta*L_2);
+        
+        GLFloat div_scale = u_scale*(L_1*L_1)/(L_2*L_2);
+        GLAdaptiveRungeKuttaOperation *integrator = [GLAdaptiveRungeKuttaOperation rungeKutta23AdvanceY: @[u0, v0, h0] stepSize: timeStep fFromTY:^(GLScalar *t, NSArray *yNew) {
+            GLSimpleInterpolationOperation *interp = [[GLSimpleInterpolationOperation alloc] initWithFirstOperand:  @[tau_x, tau_y] secondOperand: @[t]];
+            GLFunction *tx = interp.result[0];
+            GLFunction *ty = interp.result[1];
+            
+            GLFunction *u = yNew[0];
+            GLFunction *v = yNew[1];
+            GLFunction *h = yNew[2];
+            
+            GLFunction *fu = [[[v times: @(u_scale)] plus: tx] minus: [[[[h x] scalarMultiply: g1] minus: [u differentiateWithOperator:dampingOp]] spatialDomain]];
+            GLFunction *fv = [[[u times: @(-f0)] plus: [[ty times: @(1/rho_water)] dividedBy: h]] minus: [[[[h y] scalarMultiply: g1] minus: [v differentiateWithOperator:dampingOp]] spatialDomain]];
+            GLFunction *fh = [[[[u x] plus: [v y]] times: h] negate];
+            
+            NSArray *f = @[fu, fv, fh];
+            return f;
+        }];
 		
 		
 		srand(1);
