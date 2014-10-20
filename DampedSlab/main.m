@@ -14,8 +14,8 @@ int main(int argc, const char * argv[])
 	
 	@autoreleasepool {
 		
-		GLFloat H0 = 100;
-		GLFloat dRho1 = 1E-4;
+		GLFloat H0 = 50;
+		GLFloat dRho1 = 1E-3;
 		GLFloat maxTime = 40*86400;
 		GLFloat dampingOrder=2; // order of the damping operator. Order 1 is harmonic, order 2 is biharmonic, etc.
 		GLFloat dampingTime=3600; // e-folding time scale of the Nyquist frequency.
@@ -99,7 +99,7 @@ int main(int argc, const char * argv[])
 		/*		Create a NetCDF file and mutable variables in order to record some of the time steps.	*/
 		/************************************************************************************************/
 		
-		GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [NSURL URLWithString: @"/Volumes/Data/QGPlusSlab/WindForcedFPlane2.nc"] forEquation: equation overwriteExisting: YES];
+		GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent:@"WindForcedFPlane2.nc"] forEquation: equation overwriteExisting: YES];
 		
 		GLMutableVariable *hHistory = [h0 variableByAddingDimension: tDim];
 		hHistory.name = @"h";

@@ -41,7 +41,7 @@ int main (int argc, const char * argv[])
         GLFloat h2 = dRho2*H2;
 		GLFloat L_1 = sqrt( gprime * H1) / f0;
 		GLFloat L_2 = sqrt( gprime * H2) / f0;
-
+        GLFloat U_scale = beta*L_2*L_2;
 		
         
         GLDimension *xDim = [[GLDimension alloc] initDimensionWithGrid: kGLPeriodicGrid nPoints:nPoints domainMin:-domainWidth/2.0 length:domainWidth];
@@ -93,17 +93,15 @@ int main (int argc, const char * argv[])
         /*		Create the initial conditions for the slab layer                                        */
         /************************************************************************************************/
         
-        NSArray *spatialDimensions = @[xDim, yDim];
-        GLFunction *x = [GLFunction functionOfRealTypeFromDimension: xDim withDimensions: spatialDimensions forEquation: equation];
-        GLFunction *y = [GLFunction functionOfRealTypeFromDimension: yDim withDimensions: spatialDimensions forEquation: equation];
+        GLFunction *x = [GLFunction functionOfRealTypeFromDimension: xDim withDimensions: qg.dimensions forEquation: equation];
         
-        GLFunction *h0 = [GLFunction functionOfRealTypeWithDimensions: spatialDimensions forEquation: equation];
-        GLFunction *u0 = [GLFunction functionOfRealTypeWithDimensions: spatialDimensions forEquation: equation];
-        GLFunction *v0 = [GLFunction functionOfRealTypeWithDimensions: spatialDimensions forEquation: equation];
+        GLFunction *eta1_0 = [GLFunction functionOfRealTypeWithDimensions: qg.dimensions forEquation: equation];
+        GLFunction *uI_0 = [GLFunction functionOfRealTypeWithDimensions: qg.dimensions forEquation: equation];
+        GLFunction *vI_0 = [GLFunction functionOfRealTypeWithDimensions: qg.dimensions forEquation: equation];
         
-        h0 = [h0 setValue: H1 atIndices: @":,:"];
-        [u0 zero];
-        [v0 zero];
+        [eta1_0 zero];
+        [uI_0 zero];
+        [vI_0 zero];
 		
         /************************************************************************************************/
         /*		Read the winds from file																*/
@@ -119,14 +117,27 @@ int main (int argc, const char * argv[])
         v_wind = [GLFunction functionFromFunction: v_wind];
         
         GLFloat rho_air = 1.25;
-        GLFloat tau_scale = 1./( rho_water*H1*beta*beta*L_2*L_2*L_2); // Nondimensionalization factor
         GLFunction *speed_wind = [[[u_wind times: u_wind] plus: [v_wind times: v_wind]] sqrt];
         GLFunction *dragCoefficient = [[[speed_wind scalarMultiply: 0.071] scalarAdd: 0.50] scalarMultiply: 1e-3];
-        GLFunction *tau_x = [[[[u_wind times: speed_wind] times: dragCoefficient] scalarMultiply: rho_air] times: @(tau_scale)];
-        GLFunction *tau_y = [[[[v_wind times: speed_wind] times: dragCoefficient] scalarMultiply: rho_air] times: @(tau_scale)];
+        GLFunction *tau_x = [[[u_wind times: speed_wind] times: dragCoefficient] scalarMultiply: rho_air];
+        GLFunction *tau_y = [[[v_wind times: speed_wind] times: dragCoefficient] scalarMultiply: rho_air];
+        
+        GLFloat tau_scale = 1./( rho_water*H1*beta*beta*L_2*L_2*L_2); // Nondimensionalization factor
+        tau_x = [tau_x scaleVariableBy: tau_scale withUnits: @"unitless" dimensionsBy:1/qg.T_QG units: @"unitless"];
+        tau_y = [tau_y scaleVariableBy: tau_scale withUnits: @"unitless" dimensionsBy:1/qg.T_QG units: @"unitless"];
         
         [tau_x solve];
         [tau_y solve];
+        
+        /************************************************************************************************/
+        /*		Create a differential operator for damping the slab layer                               */
+        /************************************************************************************************/
+        
+        GLFloat k = pow(-1, dampingOrder+1)*pow(xDim.sampleInterval/M_PI,2*dampingOrder)/dampingTime;
+        
+        NSArray *spectralDimensions = [x dimensionsTransformedToBasis: x.differentiationBasis];
+        GLLinearTransform *harmonicOp = [GLLinearTransform harmonicOperatorOfOrder: dampingOrder fromDimensions: spectralDimensions forEquation: equation];
+        GLLinearTransform *dampingOp = [[harmonicOp times: @(k)] plus: @(-1/linearDampingTime)];
 		
 		/************************************************************************************************/
 		/*		Plop down floats                                                                        */
@@ -145,43 +156,45 @@ int main (int argc, const char * argv[])
         /*		Create a NetCDF file and mutable variables in order to record some of the time steps.	*/
         /************************************************************************************************/
         
-        GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [NSURL URLWithString: @"/Volumes/Data/QGPlusSlab/WindForcedFPlane2.nc"] forEquation: equation overwriteExisting: YES];
+        GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent:@"QGDampedSlab.nc"] forEquation: equation overwriteExisting: YES];
         
-        GLMutableVariable *hHistory = [h0 variableByAddingDimension: tDim];
-        hHistory.name = @"h";
-        hHistory.units = @"m";
-        hHistory = [netcdfFile addVariable: hHistory];
+        GLFunction *dimensionalEta1 = [eta1_0 scaleVariableBy: qg.N_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
+        GLMutableVariable *eta1History = [dimensionalEta1 variableByAddingDimension: tDim];
+        eta1History.name = @"eta1";
+        eta1History.units = @"m";
+        eta1History = [netcdfFile addVariable: eta1History];
         
-        GLMutableVariable *uHistory = [u0 variableByAddingDimension: tDim];
+        GLFunction *dimensionalU = [uI_0 scaleVariableBy: U_scale withUnits: @"m/s" dimensionsBy: qg.L_QG units: @"m"];
+        GLMutableVariable *uHistory = [dimensionalU variableByAddingDimension: tDim];
         uHistory.name = @"u";
         uHistory.units = @"m/s";
         uHistory = [netcdfFile addVariable: uHistory];
         
-        GLMutableVariable *vHistory = [v0 variableByAddingDimension: tDim];
+        GLFunction *dimensionalV = [vI_0 scaleVariableBy: U_scale withUnits: @"m/s" dimensionsBy: qg.L_QG units: @"m"];
+        GLMutableVariable *vHistory = [dimensionalV variableByAddingDimension: tDim];
         vHistory.name = @"v";
         vHistory.units = @"m/s";
         vHistory = [netcdfFile addVariable: vHistory];
+        
+        GLFunction *tau0_x = [GLFunction functionOfRealTypeWithDimensions: @[] forEquation: equation];
+		GLMutableVariable *tau_xHistory = [tau0_x variableByAddingDimension: tDim];
+		tau_xHistory.name = @"tau_x";
+        tau_xHistory.units = @"N/m^2";
+		tau_xHistory = [netcdfFile addVariable: tau_xHistory];
+        
+        GLFunction *tau0_y = [GLFunction functionOfRealTypeWithDimensions: @[] forEquation: equation];
+		GLMutableVariable *tau_yHistory = [tau0_y variableByAddingDimension: tDim];
+		tau_yHistory.name = @"tau_y";
+        tau_yHistory.units = @"N/m^2";
+		tau_yHistory = [netcdfFile addVariable: tau_yHistory];
 		
-//		GLMutableVariable *sshHistory = [ssh variableByAddingDimension: tDim];
-//		sshHistory.name = @"SSH";
-//		sshHistory = [netcdfFile addVariable: sshHistory];
-//		
-//		GLMutableVariable *sshFDHistory, *rvHistory;
-//		if (writeExtrasToFile) {
-//			sshFDHistory = [sshFD variableByAddingDimension: tDim];
-//			sshFDHistory.name = @"SSH_FD";
-//			sshFDHistory = [netcdfFile addVariable: sshFDHistory];
-//			
-//			rvHistory = [rv variableByAddingDimension: tDim];
-//			rvHistory.name = @"RV";
-//			rvHistory = [netcdfFile addVariable: rvHistory];
-//		}
-		
-		GLMutableVariable *xPositionHistory = [xPosition variableByAddingDimension: tDim];
+        GLFunction *dimensionalXPosition = [xPosition scaleVariableBy: qg.L_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
+		GLMutableVariable *xPositionHistory = [dimensionalXPosition variableByAddingDimension: tDim];
 		xPositionHistory.name = @"x-position";
 		xPositionHistory = [netcdfFile addVariable: xPositionHistory];
 		
-		GLMutableVariable *yPositionHistory = [yPosition variableByAddingDimension: tDim];
+        GLFunction *dimensionalYPosition = [yPosition scaleVariableBy: qg.L_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
+		GLMutableVariable *yPositionHistory = [dimensionalYPosition variableByAddingDimension: tDim];
 		yPositionHistory.name = @"y-position";
 		yPositionHistory = [netcdfFile addVariable: yPositionHistory];
 		
@@ -191,7 +204,7 @@ int main (int argc, const char * argv[])
         
         CGFloat cfl = 0.5;
         GLFloat timeStep = cfl * xDim.sampleInterval / sqrt(g*H1);
-        timeStep = 300;
+        timeStep = 300/qg.T_QG;
 		
 		/************************************************************************************************/
 		/*		Determine an appropriate time step based on the CFL condition.							*/
@@ -200,58 +213,59 @@ int main (int argc, const char * argv[])
         GLFloat u_scale = f0/(beta*L_2);
         
         GLFloat div_scale = u_scale*(L_1*L_1)/(L_2*L_2);
-        GLAdaptiveRungeKuttaOperation *integrator = [GLAdaptiveRungeKuttaOperation rungeKutta23AdvanceY: @[u0, v0, h0] stepSize: timeStep fFromTY:^(GLScalar *t, NSArray *yNew) {
+        GLFunction *eta1_0_FD = [eta1_0 transformToBasis: @[@(kGLExponentialBasis),@(kGLExponentialBasis)]];
+        GLAdaptiveRungeKuttaOperation *integrator = [GLAdaptiveRungeKuttaOperation rungeKutta23AdvanceY: @[uI_0, vI_0, eta1_0_FD] stepSize: timeStep fFromTY:^(GLScalar *t, NSArray *yNew) {
             GLSimpleInterpolationOperation *interp = [[GLSimpleInterpolationOperation alloc] initWithFirstOperand:  @[tau_x, tau_y] secondOperand: @[t]];
             GLFunction *tx = interp.result[0];
             GLFunction *ty = interp.result[1];
             
-            GLFunction *u = yNew[0];
-            GLFunction *v = yNew[1];
-            GLFunction *h = yNew[2];
+            GLFunction *uI = yNew[0];
+            GLFunction *vI = yNew[1];
+            GLFunction *eta1 = yNew[2];
             
-            GLFunction *fu = [[[v times: @(u_scale)] plus: tx] minus: [[[[h x] scalarMultiply: g1] minus: [u differentiateWithOperator:dampingOp]] spatialDomain]];
-            GLFunction *fv = [[[u times: @(-f0)] plus: [[ty times: @(1/rho_water)] dividedBy: h]] minus: [[[[h y] scalarMultiply: g1] minus: [v differentiateWithOperator:dampingOp]] spatialDomain]];
-            GLFunction *fh = [[[[u x] plus: [v y]] times: h] negate];
+            // Should I be damping uI? Or u1?
+            GLFunction *f_uI = [[[vI times:  @(u_scale)] plus: tx] plus: [[[[eta1 x] times: @(u_scale)] plus: [uI differentiateWithOperator:dampingOp]] spatialDomain]];
+            GLFunction *f_vI = [[[[uI negate] times:  @(u_scale)] plus: ty] plus: [[[[eta1 y] times: @(u_scale)] plus: [vI differentiateWithOperator:dampingOp]] spatialDomain]];
+            GLFunction *f_eta1 = [[[uI x] plus: [vI y]] times: @(div_scale)];
             
-            NSArray *f = @[fu, fv, fh];
+            NSArray *f = @[f_uI, f_vI, f_eta1];
             return f;
         }];
 		
-		
-		srand(1);
-		for (GLFloat time = 1/T_QG; time < maxTime/T_QG; time += 1/T_QG)
-		{
-			@autoreleasepool {
-				yin = [integrator stepForward: yin toTime: time];
-				
-				zeta = yin[0];
-				xPosition = yin[1];
-				yPosition = yin[2];
-				
-				NSLog(@"Logging day: %f, step size: %f.", (integrator.currentTime*T_QG), integrator.lastStepSize*T_QG);
-				// We're using spectral code, so it's possible (and is in fact the case) that the variable is not in the spatial domain.
-				[tDim addPoint: @(integrator.currentTime)];
-				
-				GLVariable *etaFD = [zeta diff: @"inverseLaplacianMinusOne"];
-				GLVariable *eta = [etaFD spatialDomain];
-				GLVariable *rv2 = [[etaFD diff: @"harmonicOperator"] spatialDomain];
-				
-				[sshHistory concatenateWithLowerDimensionalVariable: eta alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
-				[netcdfFile waitUntilAllOperationsAreFinished];
-				
-				if (writeExtrasToFile) {
-					[sshFDHistory concatenateWithLowerDimensionalVariable: etaFD alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
-					[netcdfFile waitUntilAllOperationsAreFinished];
-					[rvHistory concatenateWithLowerDimensionalVariable: rv2 alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
-					[netcdfFile waitUntilAllOperationsAreFinished];
-				}
-				
-				[xPositionHistory concatenateWithLowerDimensionalVariable: xPosition alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
-				[netcdfFile waitUntilAllOperationsAreFinished];
-				[yPositionHistory concatenateWithLowerDimensionalVariable: yPosition alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
-				[netcdfFile waitUntilAllOperationsAreFinished];
-			}
-		}
+        
+        for (GLFloat time = 0; time < maxTime/qg.T_QG; time += (86400/20)/qg.T_QG)
+        {
+            @autoreleasepool {
+                NSArray *yin = [integrator stepForwardToTime: time];
+                
+                NSLog(@"Logging day: %f, step size: %f.", (qg.T_QG*integrator.currentTime/86400), integrator.lastStepSize*qg.T_QG);
+                
+                [tDim addPoint: @(time*qg.T_QG)];
+                
+                GLFunction *eta1 = [[yin[2] spatialDomain] scaleVariableBy: qg.N_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
+                [eta1History concatenateWithLowerDimensionalVariable: eta1 alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
+                
+                GLFunction *u = [yin[0] scaleVariableBy: U_scale withUnits: @"m/s" dimensionsBy: qg.L_QG units: @"m"];
+                [uHistory concatenateWithLowerDimensionalVariable: u alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
+                
+                GLFunction *v = [yin[1] scaleVariableBy: U_scale withUnits: @"m/s" dimensionsBy: qg.L_QG units: @"m"];
+                [vHistory concatenateWithLowerDimensionalVariable: v alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
+                
+                GLSimpleInterpolationOperation *interp = [[GLSimpleInterpolationOperation alloc] initWithFirstOperand:  @[tau_x, tau_y] secondOperand: @[[GLScalar scalarWithValue: time forEquation:equation]]];
+                
+                GLScalar *tau_x_i = [interp.result[0] scaleBy: 1/tau_scale withUnits: @"N/m^2"];
+                GLScalar *tau_y_i = [interp.result[1] scaleBy: 1/tau_scale withUnits: @"N/m^2"];
+                [tau_x_i solve];
+                [tau_y_i solve];
+                [tau_xHistory concatenateWithLowerDimensionalVariable: tau_x_i alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
+                [tau_yHistory concatenateWithLowerDimensionalVariable: tau_y_i alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
+                
+                
+                NSLog(@"Tau (%g, %g)", *(tau_x_i.pointerValue), *(tau_y_i.pointerValue));
+                
+                [netcdfFile waitUntilAllOperationsAreFinished];
+            }
+        }
 		
 		NSLog(@"Close the NetCDF file and wrap up");
 		

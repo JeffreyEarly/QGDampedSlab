@@ -11,6 +11,7 @@
 		81674B3C19D9DBF7008FFFC5 /* GLNumericalModelingKit.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 81674B3B19D9DBF7008FFFC5 /* GLNumericalModelingKit.dylib */; };
 		81674B4419D9DF71008FFFC5 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 81674B4319D9DF71008FFFC5 /* main.m */; };
 		81674B4819D9DFA8008FFFC5 /* GLNumericalModelingKit.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 81674B3B19D9DBF7008FFFC5 /* GLNumericalModelingKit.dylib */; };
+		817513D519F563EF009FE412 /* GLOceanKit.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 817513D419F563EF009FE412 /* GLOceanKit.dylib */; };
 		818772C119DB29A4007E5DA3 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 818772C019DB29A4007E5DA3 /* main.swift */; };
 		8187733819DB3364007E5DA3 /* GLNumericalModelingKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8187733719DB3364007E5DA3 /* GLNumericalModelingKit.framework */; };
 /* End PBXBuildFile section */
@@ -51,6 +52,8 @@
 		81674B3B19D9DBF7008FFFC5 /* GLNumericalModelingKit.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = GLNumericalModelingKit.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		81674B4119D9DF71008FFFC5 /* DampedSlab */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DampedSlab; sourceTree = BUILT_PRODUCTS_DIR; };
 		81674B4319D9DF71008FFFC5 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		817513D219F56235009FE412 /* GLOceanKit.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = GLOceanKit.dylib; path = ../GLOceanKit/build/Debug/GLOceanKit.dylib; sourceTree = "<group>"; };
+		817513D419F563EF009FE412 /* GLOceanKit.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = GLOceanKit.dylib; path = "../../../Library/Developer/Xcode/DerivedData/MasterWorkspace-geajijycseerbtfvjkaodseclatk/Build/Products/Debug/GLOceanKit.dylib"; sourceTree = "<group>"; };
 		818772BE19DB29A4007E5DA3 /* DampedSlabSwift */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = DampedSlabSwift; sourceTree = BUILT_PRODUCTS_DIR; };
 		818772C019DB29A4007E5DA3 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		8187733719DB3364007E5DA3 /* GLNumericalModelingKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLNumericalModelingKit.framework; path = "../../../Library/Developer/Xcode/DerivedData/QGDampedSlab-fphdwedzqugbnhesewncirqzzjsn/Build/Products/Debug/GLNumericalModelingKit.framework"; sourceTree = "<group>"; };
@@ -61,6 +64,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				817513D519F563EF009FE412 /* GLOceanKit.dylib in Frameworks */,
 				81674B3C19D9DBF7008FFFC5 /* GLNumericalModelingKit.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -87,6 +91,8 @@
 		81674B2819D9DB45008FFFC5 = {
 			isa = PBXGroup;
 			children = (
+				817513D419F563EF009FE412 /* GLOceanKit.dylib */,
+				817513D219F56235009FE412 /* GLOceanKit.dylib */,
 				8187733719DB3364007E5DA3 /* GLNumericalModelingKit.framework */,
 				81674B3319D9DB45008FFFC5 /* QGDampedSlab */,
 				81674B4219D9DF71008FFFC5 /* DampedSlab */,
@@ -335,7 +341,7 @@
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(USER_LIBRARY_DIR)/Developer/Xcode/DerivedData/QGDampedSlab-fphdwedzqugbnhesewncirqzzjsn/Build/Products/Debug",
+					"$(USER_LIBRARY_DIR)/Developer/Xcode/DerivedData/MasterWorkspace-geajijycseerbtfvjkaodseclatk/Build/Products/Debug",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -351,7 +357,7 @@
 				);
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(USER_LIBRARY_DIR)/Developer/Xcode/DerivedData/QGDampedSlab-fphdwedzqugbnhesewncirqzzjsn/Build/Products/Debug",
+					"$(USER_LIBRARY_DIR)/Developer/Xcode/DerivedData/MasterWorkspace-geajijycseerbtfvjkaodseclatk/Build/Products/Debug",
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -461,6 +467,7 @@
 				818772C319DB29A4007E5DA3 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
