@@ -167,6 +167,8 @@ int main(int argc, const char * argv[])
 			//			GLVariable *fu = [[[[v scalarMultiply: f] plus: [[tx scalarMultiply: 1/rho_water] dividedBy: h]] minus: [[[[h x] scalarMultiply: g1] minus: [u diff:@"damp"]] spatialDomain]] minus: [[u times: [u x]] plus: [v times: [u y]]]];
 			//            GLVariable *fv = [[[[u scalarMultiply: -f] plus: [[ty scalarMultiply: 1/rho_water] dividedBy: h]] minus: [[[[h y] scalarMultiply: g1] minus: [v diff:@"damp"]] spatialDomain]] minus: [[u times: [v x]] plus: [v times: [v y]]]];
 			
+			// f_u = f*v + tau_x/(rho*h) - (g*h_x - damp_u)
+			// f_v =-f*u + tau_y(rho*h) - (g*h_y - damp_v)
 			GLFunction *fu = [[[v times: @(f)] plus: [[tx times: @(1/rho_water)] dividedBy: h]] minus: [[[[h x] scalarMultiply: g1] minus: [u differentiateWithOperator:dampingOp]] spatialDomain]];
 			GLFunction *fv = [[[u times: @(-f)] plus: [[ty times: @(1/rho_water)] dividedBy: h]] minus: [[[[h y] scalarMultiply: g1] minus: [v differentiateWithOperator:dampingOp]] spatialDomain]];
 			GLFunction *fh = [[[[u x] plus: [v y]] times: h] negate];

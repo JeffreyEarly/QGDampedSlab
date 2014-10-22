@@ -9,10 +9,34 @@ v = squeeze(ncread(file, 'v', [1 1 1], [1 1 Inf], [1 1 1]));
 tau_x = squeeze(ncread(file, 'tau_x'));
 tau_y = squeeze(ncread(file, 'tau_y'));
 
-figure,
-plot(t, u, 'b')
-hold on
-plot(t, v, 'r')
+xPosition1 = squeeze(ncread(file, 'x-position-layer-1', [1 1 1], [1 1 Inf], [1 1 1]));
+yPosition1 = squeeze(ncread(file, 'y-position-layer-1', [1 1 1], [1 1 Inf], [1 1 1]));
 
-h = double(squeeze(ncread(file, 'eta1', [1 1 70], [Inf Inf 1], [1 1 1])));
-figure, pcolor(x,y,h), shading flat
+figure
+plot(xPosition1,yPosition1)
+dt = t(3)-t(2);
+u1 = diff(xPosition1)/dt;
+v1 = diff(yPosition1)/dt;
+
+t_days = t/86140;
+
+figure,
+plot(t_days(2:end), u1, 'b')
+hold on
+plot(t_days(2:end), v1, 'r')
+xlim([0 40])
+
+figure,
+plot(t_days, u, 'b')
+hold on
+plot(t_days, v, 'r')
+xlim([0 40])
+
+% h = double(squeeze(ncread(file, 'eta1', [1 1 70], [Inf Inf 1], [1 1 1])));
+% figure, pcolor(x,y,h), shading flat
+
+figure
+plot(t_days,tau_x, 'b')
+hold on
+plot(t_days, tau_y, 'r')
+xlim([0 40])

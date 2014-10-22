@@ -14,6 +14,8 @@ slab_damp = 4;
 
 [t, u, v] = OBLModel_DampedSlab( time_wind, u_wind, v_wind, depth, latitude, slab_damp );
 
+[t_stress, tau] = StressFromWindVector( time_wind*86400, u_wind, v_wind);
+
 days_wind = time_wind - time_wind(1);
 days_current = t - t(1);
 
@@ -21,6 +23,13 @@ figure,
 plot(time_wind, u, 'b')
 hold on
 plot(time_wind, v, 'r')
+xlim([0 40])
+
+figure,
+plot(time_wind, real(tau), 'b')
+hold on
+plot(time_wind, imag(tau), 'r')
+xlim([0 40])
 
 figure
 subplot(2,1,1)

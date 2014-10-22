@@ -10,6 +10,7 @@ figure,
 plot(t, u, 'b')
 hold on
 plot(t, v, 'r')
+xlim([0 40])
 
-h = double(squeeze(ncread(file, 'h', [1 1 70], [Inf Inf 1], [1 1 1])));
-figure, pcolor(x,y,h), shading flat
+% h = double(squeeze(ncread(file, 'h', [1 1 70], [Inf Inf 1], [1 1 1])));
+% figure, pcolor(x,y,h), shading flat
