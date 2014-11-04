@@ -152,6 +152,12 @@ int main (int argc, const char * argv[])
         eta1History.units = @"m";
         eta1History = [netcdfFile addVariable: eta1History];
         
+        GLFunction *dimensionalEta2 = [[qg.ssh spatialDomain] scaleVariableBy: qg.N_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
+        GLMutableVariable *eta2History = [dimensionalEta2 variableByAddingDimension: tDim];
+        eta2History.name = @"eta2";
+        eta2History.units = @"m";
+        eta2History = [netcdfFile addVariable: eta2History];
+        
         GLFunction *dimensionalU = [uI_0 scaleVariableBy: U_scale withUnits: @"m/s" dimensionsBy: qg.L_QG units: @"m"];
         GLMutableVariable *uHistory = [dimensionalU variableByAddingDimension: tDim];
         uHistory.name = @"u";
@@ -212,16 +218,23 @@ int main (int argc, const char * argv[])
         
         GLFloat div_scale = u_scale*(L_1*L_1)/(L_2*L_2);
         GLFunction *eta1_0_FD = [eta1_0 transformToBasis: @[@(kGLExponentialBasis),@(kGLExponentialBasis)]];
-        GLAdaptiveRungeKuttaOperation *integrator = [GLAdaptiveRungeKuttaOperation rungeKutta23AdvanceY: @[uI_0, vI_0, eta1_0_FD, xPos1, yPos1, xPos2, yPos2] stepSize: timeStep fFromTY:^(GLScalar *t, NSArray *y) {
+        [qg createDifferentialOperators];
+        [qg createIntegrationOperation];
+        GLAdaptiveRungeKuttaOperation *integrator = [GLAdaptiveRungeKuttaOperation rungeKutta23AdvanceY: @[qg.yin[0], uI_0, vI_0, eta1_0_FD, xPos1, yPos1, xPos2, yPos2] stepSize: timeStep fFromTY:^(GLScalar *t, NSArray *y) {
+            // This should work because the first item in y is expected to be the same for both blocks (this one and the qg one).
+            NSArray *fqg = qg.fBlock(t,y);
+            GLFunction *eta2 = y[0];
+            
             GLSimpleInterpolationOperation *interpStress = [[GLSimpleInterpolationOperation alloc] initWithFirstOperand:  @[tau_x, tau_y] secondOperand: @[t]];
             GLFunction *tx = interpStress.result[0];
             GLFunction *ty = interpStress.result[1];
-			
-			//GLAdaptiveRungeKuttaOperation *qgIntegrator = [qg.integrator stepForwardToTime:<#(GLFloat)#>
-			
-            GLFunction *uI = y[0];
-            GLFunction *vI = y[1];
-            GLFunction *eta1 = y[2];
+						
+            GLFunction *uI = y[1];
+            GLFunction *vI = y[2];
+            GLFunction *eta1 = y[3];
+            
+            GLFunction *u2 = [[[eta2 y] spatialDomain] negate];
+            GLFunction *v2 = [[eta2 x] spatialDomain];
             
             // Should I be damping uI? Or u1?
 			// f_u = v + tx + eta_x + damp_u
@@ -230,11 +243,11 @@ int main (int argc, const char * argv[])
             GLFunction *f_vI = [[[[uI negate] times:  @(u_scale)] plus: [ty minus: [vI times: @(qg.T_QG/linearDampingTime)]]] plus: [[[eta1 y] times: @(u_scale)] spatialDomain]];
             GLFunction *f_eta1 = [[[uI x] plus: [vI y]] times: @(div_scale)];
 			
-			GLSimpleInterpolationOperation *interpUV1 = [[GLSimpleInterpolationOperation alloc] initWithFirstOperand: @[uI,vI] secondOperand: @[y[3],y[4]]];
+			GLSimpleInterpolationOperation *interpUV1 = [[GLSimpleInterpolationOperation alloc] initWithFirstOperand: @[uI,vI] secondOperand: @[y[4],y[5]]];
 			
-			GLSimpleInterpolationOperation *interpUV2 = [[GLSimpleInterpolationOperation alloc] initWithFirstOperand: @[uI,vI] secondOperand: @[y[3],y[4]]];
+			GLSimpleInterpolationOperation *interpUV2 = [[GLSimpleInterpolationOperation alloc] initWithFirstOperand: @[u2,v2] secondOperand: @[y[5],y[6]]];
             
-            NSArray *f = @[f_uI, f_vI, f_eta1, interpUV1.result[0], interpUV1.result[1], interpUV2.result[0], interpUV2.result[1]];
+            NSArray *f = @[fqg[0], f_uI, f_vI, f_eta1, interpUV1.result[0], interpUV1.result[1], interpUV2.result[0], interpUV2.result[1]];
             return f;
         }];
 		
@@ -248,25 +261,28 @@ int main (int argc, const char * argv[])
                 
                 [tDim addPoint: @(time*qg.T_QG)];
                 
-                GLFunction *eta1 = [[yin[2] spatialDomain] scaleVariableBy: qg.N_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
-                [eta1History concatenateWithLowerDimensionalVariable: eta1 alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
+                GLFunction *eta2 = [[yin[0] spatialDomain] scaleVariableBy: qg.N_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
+                [eta2History concatenateWithLowerDimensionalVariable: eta2 alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
                 
-                GLFunction *u = [yin[0] scaleVariableBy: U_scale withUnits: @"m/s" dimensionsBy: qg.L_QG units: @"m"];
+                GLFunction *u = [yin[1] scaleVariableBy: U_scale withUnits: @"m/s" dimensionsBy: qg.L_QG units: @"m"];
                 [uHistory concatenateWithLowerDimensionalVariable: u alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
                 
-                GLFunction *v = [yin[1] scaleVariableBy: U_scale withUnits: @"m/s" dimensionsBy: qg.L_QG units: @"m"];
+                GLFunction *v = [yin[2] scaleVariableBy: U_scale withUnits: @"m/s" dimensionsBy: qg.L_QG units: @"m"];
                 [vHistory concatenateWithLowerDimensionalVariable: v alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
+                
+                GLFunction *eta1 = [[yin[3] spatialDomain] scaleVariableBy: qg.N_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
+                [eta1History concatenateWithLowerDimensionalVariable: eta1 alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
 				
-				GLFunction *xPos1 = [yin[3] scaleVariableBy: qg.L_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
+				GLFunction *xPos1 = [yin[4] scaleVariableBy: qg.L_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
 				[xPosition1History concatenateWithLowerDimensionalVariable: xPos1 alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
 				
-				GLFunction *yPos1 = [yin[4] scaleVariableBy: qg.L_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
+				GLFunction *yPos1 = [yin[5] scaleVariableBy: qg.L_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
 				[yPosition1History concatenateWithLowerDimensionalVariable: yPos1 alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
 				
-				GLFunction *xPos2 = [yin[5] scaleVariableBy: qg.L_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
+				GLFunction *xPos2 = [yin[6] scaleVariableBy: qg.L_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
 				[xPosition2History concatenateWithLowerDimensionalVariable: xPos2 alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
 				
-				GLFunction *yPos2 = [yin[6] scaleVariableBy: qg.L_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
+				GLFunction *yPos2 = [yin[7] scaleVariableBy: qg.L_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
 				[yPosition2History concatenateWithLowerDimensionalVariable: yPos2 alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
 				
                 GLSimpleInterpolationOperation *interp = [[GLSimpleInterpolationOperation alloc] initWithFirstOperand:  @[tau_x, tau_y] secondOperand: @[[GLScalar scalarWithValue: time forEquation:equation]]];
