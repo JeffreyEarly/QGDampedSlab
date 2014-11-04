@@ -12,6 +12,16 @@ tau_y = squeeze(ncread(file, 'tau_y'));
 xPosition1 = squeeze(ncread(file, 'x-position-layer-1', [1 1 1], [1 1 Inf], [1 1 1]));
 yPosition1 = squeeze(ncread(file, 'y-position-layer-1', [1 1 1], [1 1 Inf], [1 1 1]));
 
+xPosition2 = squeeze(ncread(file, 'x-position-layer-2', [1 1 1], [1 1 Inf], [1 1 1]));
+yPosition2 = squeeze(ncread(file, 'y-position-layer-2', [1 1 1], [1 1 Inf], [1 1 1]));
+
+eta2 = squeeze(ncread(file, 'eta2', [1 1 800], [Inf Inf 1], [1 1 1]));
+figure
+pcolor(x,y,eta2), axis equal tight, shading interp
+
+figure
+plot(xPosition2,yPosition2)
+
 figure
 plot(xPosition1,yPosition1)
 dt = t(3)-t(2);

@@ -81,6 +81,16 @@ int main (int argc, const char * argv[])
             
             [qg runSimulationToTime: 700*86400];
         }
+//        else
+//        {
+//            Quasigeostrophy2D *qg = [[Quasigeostrophy2D alloc] initWithFile:restartFile resolutionDoubling:NO equation: equation];
+//            qg.shouldForce = NO;
+//            qg.outputFile = [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent:@"QGTurbulence_restarted.nc"];
+//            qg.shouldAdvectFloats = YES;
+//            qg.outputInterval = 86400./20.;
+//            
+//            [qg runSimulationToTime: 40*86400];
+//        }
         
         /************************************************************************************************/
         /*		Create the integrator for the unforced QG layer											*/
@@ -223,7 +233,7 @@ int main (int argc, const char * argv[])
         GLAdaptiveRungeKuttaOperation *integrator = [GLAdaptiveRungeKuttaOperation rungeKutta23AdvanceY: @[qg.yin[0], uI_0, vI_0, eta1_0_FD, xPos1, yPos1, xPos2, yPos2] stepSize: timeStep fFromTY:^(GLScalar *t, NSArray *y) {
             // This should work because the first item in y is expected to be the same for both blocks (this one and the qg one).
             NSArray *fqg = qg.fBlock(t,y);
-            GLFunction *eta2 = y[0];
+            GLFunction *eta2 = [y[0] differentiateWithOperator: qg.inverseLaplacianMinusOne];
             
             GLSimpleInterpolationOperation *interpStress = [[GLSimpleInterpolationOperation alloc] initWithFirstOperand:  @[tau_x, tau_y] secondOperand: @[t]];
             GLFunction *tx = interpStress.result[0];
@@ -245,11 +255,12 @@ int main (int argc, const char * argv[])
 			
 			GLSimpleInterpolationOperation *interpUV1 = [[GLSimpleInterpolationOperation alloc] initWithFirstOperand: @[uI,vI] secondOperand: @[y[4],y[5]]];
 			
-			GLSimpleInterpolationOperation *interpUV2 = [[GLSimpleInterpolationOperation alloc] initWithFirstOperand: @[u2,v2] secondOperand: @[y[5],y[6]]];
+			GLSimpleInterpolationOperation *interpUV2 = [[GLSimpleInterpolationOperation alloc] initWithFirstOperand: @[u2,v2] secondOperand: @[y[6],y[7]]];
             
             NSArray *f = @[fqg[0], f_uI, f_vI, f_eta1, interpUV1.result[0], interpUV1.result[1], interpUV2.result[0], interpUV2.result[1]];
             return f;
         }];
+        //integrator.absoluteTolerance = @[@(1e-3)];
 		
         
         for (GLFloat time = (86400/20)/qg.T_QG; time < maxTime/qg.T_QG; time += (86400/20)/qg.T_QG)
@@ -261,7 +272,7 @@ int main (int argc, const char * argv[])
                 
                 [tDim addPoint: @(time*qg.T_QG)];
                 
-                GLFunction *eta2 = [[yin[0] spatialDomain] scaleVariableBy: qg.N_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
+                GLFunction *eta2 = [[[yin[0] differentiateWithOperator: qg.inverseLaplacianMinusOne] spatialDomain] scaleVariableBy: qg.N_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
                 [eta2History concatenateWithLowerDimensionalVariable: eta2 alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
                 
                 GLFunction *u = [yin[1] scaleVariableBy: U_scale withUnits: @"m/s" dimensionsBy: qg.L_QG units: @"m"];
