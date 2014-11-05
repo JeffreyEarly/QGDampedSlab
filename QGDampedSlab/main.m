@@ -56,7 +56,7 @@ int main (int argc, const char * argv[])
         /*		Spin up the lower (QG) layer															*/
         /************************************************************************************************/
         
-        NSString *baseName = @"QGTurbulence_3";
+        NSString *baseName = @"QGTurbulence_4";
         NSURL *restartFile = [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent: [baseName stringByAppendingString: @".nc"]];
         NSFileManager *fileManager = [[NSFileManager alloc] init];
         
@@ -86,7 +86,7 @@ int main (int argc, const char * argv[])
         NSURL *restartURLx2 = [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent: [baseName stringByAppendingString: @"@x2.nc"]];
         if (![fileManager fileExistsAtPath: restartURLx2.path])
         {
-            Quasigeostrophy2D *qg = [[Quasigeostrophy2D alloc] initWithFile:restartFile resolutionDoubling:YES equation: equation];
+            Quasigeostrophy2D *qg = [[Quasigeostrophy2D alloc] initWithFile:restartFile resolutionDoubling:NO equation: equation];
             qg.shouldForce = YES;
             
             qg.outputFile = restartURLx2;
