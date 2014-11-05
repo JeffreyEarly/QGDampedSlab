@@ -21,7 +21,7 @@ int main (int argc, const char * argv[])
 		GLFloat dRho2 = 1E-3;
 		GLFloat latitude = 24;
 		
-        GLFloat domainWidth = 100e3; // m
+        GLFloat domainWidth = 200e3; // m
         NSUInteger nPoints = 256;
         NSUInteger aspectRatio = 1;
         NSUInteger floatFraction = 4;
@@ -56,7 +56,8 @@ int main (int argc, const char * argv[])
         /*		Spin up the lower (QG) layer															*/
         /************************************************************************************************/
         
-        NSURL *restartFile = [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent:@"QGTurbulence.nc"];
+        NSString *baseName = @"QGTurbulence_3";
+        NSURL *restartFile = [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent: [baseName stringByAppendingString: @".nc"]];
         NSFileManager *fileManager = [[NSFileManager alloc] init];
         
         if (![fileManager fileExistsAtPath: restartFile.path])
@@ -67,9 +68,9 @@ int main (int argc, const char * argv[])
             qg.shouldUseSVV = YES;
             qg.shouldAntiAlias = NO;
             qg.shouldForce = YES;
-            qg.forcingFraction = 16;
+            qg.forcingFraction = 32;
             qg.forcingWidth = 1;
-            qg.f_zeta = 10;
+            qg.f_zeta = 800;
             qg.forcingDecorrelationTime = HUGE_VAL;
             qg.thermalDampingFraction = 0.0;
             qg.frictionalDampingFraction = 2.0;
@@ -77,10 +78,26 @@ int main (int argc, const char * argv[])
             qg.outputFile = restartFile;
             qg.shouldAdvectFloats = NO;
             qg.shouldAdvectTracer = NO;
-            qg.outputInterval = 10*86400.;
+            qg.outputInterval = 1*86400.;
             
-            [qg runSimulationToTime: 700*86400];
+            [qg runSimulationToTime: 61*86400];
         }
+        
+        NSURL *restartURLx2 = [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent: [baseName stringByAppendingString: @"@x2.nc"]];
+        if (![fileManager fileExistsAtPath: restartURLx2.path])
+        {
+            Quasigeostrophy2D *qg = [[Quasigeostrophy2D alloc] initWithFile:restartFile resolutionDoubling:YES equation: equation];
+            qg.shouldForce = YES;
+            
+            qg.outputFile = restartURLx2;
+            qg.shouldAdvectFloats = NO;
+            qg.shouldAdvectTracer = NO;
+            qg.outputInterval = 86400./48.;
+            
+            [qg runSimulationToTime: 1*86400];
+        }
+        
+        
 //        else
 //        {
 //            Quasigeostrophy2D *qg = [[Quasigeostrophy2D alloc] initWithFile:restartFile resolutionDoubling:NO equation: equation];
@@ -96,9 +113,12 @@ int main (int argc, const char * argv[])
         /*		Create the integrator for the unforced QG layer											*/
         /************************************************************************************************/
         
-        Quasigeostrophy2D *qg = [[Quasigeostrophy2D alloc] initWithFile:restartFile resolutionDoubling:NO equation: equation];
+        Quasigeostrophy2D *qg = [[Quasigeostrophy2D alloc] initWithFile:restartURLx2 resolutionDoubling:NO equation: equation];
         qg.shouldForce = NO;
         
+        GLFloat maxU = sqrt([[[[[qg.ssh y] spatialDomain] times: [[qg.ssh y] spatialDomain]] plus: [[[qg.ssh x] spatialDomain] times: [[qg.ssh x] spatialDomain]]] maxNow]);
+        NSLog(@"Maximum velocity in QG layer: %.1f cm/s", U_scale*maxU*100);
+        return 0;
         /************************************************************************************************/
         /*		Create the initial conditions for the slab layer                                        */
         /************************************************************************************************/
@@ -252,8 +272,19 @@ int main (int argc, const char * argv[])
 			GLFunction *f_uI = [[[vI times:  @(u_scale)] plus: [tx minus: [uI times: @(qg.T_QG/linearDampingTime)]]] plus: [[[eta1 x] times: @(u_scale)] spatialDomain]];
             GLFunction *f_vI = [[[[uI negate] times:  @(u_scale)] plus: [ty minus: [vI times: @(qg.T_QG/linearDampingTime)]]] plus: [[[eta1 y] times: @(u_scale)] spatialDomain]];
             GLFunction *f_eta1 = [[[uI x] plus: [vI y]] times: @(div_scale)];
+            
+            // These are actually *negative* u2_x, etc.
+            GLFunction *u2_x = [[eta2 xy] spatialDomain];
+            GLFunction *u2_y = [[eta2 yy] spatialDomain];
+            GLFunction *v2_x = [[[eta2 xx] spatialDomain] negate];
+            GLFunction *v2_y = [[[eta2 xy] spatialDomain] negate];
+            f_uI = [f_uI plus: [[uI times: u2_x] plus: [vI times: u2_y]]];
+            f_vI = [f_vI plus: [[uI times: v2_x] plus: [vI times: v2_y]]];
 			
-			GLSimpleInterpolationOperation *interpUV1 = [[GLSimpleInterpolationOperation alloc] initWithFirstOperand: @[uI,vI] secondOperand: @[y[4],y[5]]];
+            
+            GLFunction *u1 = [uI plus: u2];
+            GLFunction *v1 = [vI plus: v2];
+			GLSimpleInterpolationOperation *interpUV1 = [[GLSimpleInterpolationOperation alloc] initWithFirstOperand: @[u1,v1] secondOperand: @[y[4],y[5]]];
 			
 			GLSimpleInterpolationOperation *interpUV2 = [[GLSimpleInterpolationOperation alloc] initWithFirstOperand: @[u2,v2] secondOperand: @[y[6],y[7]]];
             
