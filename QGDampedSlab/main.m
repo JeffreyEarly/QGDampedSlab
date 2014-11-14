@@ -21,12 +21,12 @@ int main (int argc, const char * argv[])
 		GLFloat dRho2 = 1E-3;
 		GLFloat latitude = 24;
 		
-        GLFloat domainWidth = 200e3; // m
+        GLFloat domainWidth = 1000e3; // m
         NSUInteger nPoints = 256;
         NSUInteger aspectRatio = 1;
         NSUInteger floatFraction = 4;
         
-		GLFloat maxTime = 40*86400;
+		GLFloat maxTime = 150*86400;
 		GLFloat dampingOrder=2; // order of the damping operator. Order 1 is harmonic, order 2 is biharmonic, etc.
 		GLFloat dampingTime=3600; // e-folding time scale of the Nyquist frequency.
 		GLFloat linearDampingTime = 4*86400;
@@ -56,7 +56,7 @@ int main (int argc, const char * argv[])
         /*		Spin up the lower (QG) layer															*/
         /************************************************************************************************/
         
-        NSString *baseName = @"QGTurbulence_4";
+        NSString *baseName = @"QGTurbulence_0";
         NSURL *restartFile = [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent: [baseName stringByAppendingString: @".nc"]];
         NSFileManager *fileManager = [[NSFileManager alloc] init];
         
@@ -70,7 +70,7 @@ int main (int argc, const char * argv[])
             qg.shouldForce = YES;
             qg.forcingFraction = 32;
             qg.forcingWidth = 1;
-            qg.f_zeta = 800;
+            qg.f_zeta = .2;
             qg.forcingDecorrelationTime = HUGE_VAL;
             qg.thermalDampingFraction = 0.0;
             qg.frictionalDampingFraction = 2.0;
@@ -78,48 +78,50 @@ int main (int argc, const char * argv[])
             qg.outputFile = restartFile;
             qg.shouldAdvectFloats = NO;
             qg.shouldAdvectTracer = NO;
-            qg.outputInterval = 1*86400.;
-            
-            [qg runSimulationToTime: 61*86400];
+            qg.outputInterval = 50*86400.;
+			qg.shouldWriteRV = NO;
+            [qg runSimulationToTime: 1501*86400];
         }
         
         NSURL *restartURLx2 = [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent: [baseName stringByAppendingString: @"@x2.nc"]];
         if (![fileManager fileExistsAtPath: restartURLx2.path])
         {
-            Quasigeostrophy2D *qg = [[Quasigeostrophy2D alloc] initWithFile:restartFile resolutionDoubling:NO equation: equation];
+            Quasigeostrophy2D *qg = [[Quasigeostrophy2D alloc] initWithFile:restartFile resolutionDoubling:YES equation: equation];
             qg.shouldForce = YES;
             
             qg.outputFile = restartURLx2;
             qg.shouldAdvectFloats = NO;
             qg.shouldAdvectTracer = NO;
-            qg.outputInterval = 86400./48.;
+            qg.outputInterval = 10*86400.;
             
-            [qg runSimulationToTime: 1*86400];
+            [qg runSimulationToTime: 101*86400];
         }
-        
-        
-//        else
-//        {
-//            Quasigeostrophy2D *qg = [[Quasigeostrophy2D alloc] initWithFile:restartFile resolutionDoubling:NO equation: equation];
-//            qg.shouldForce = NO;
-//            qg.outputFile = [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent:@"QGTurbulence_restarted.nc"];
-//            qg.shouldAdvectFloats = YES;
-//            qg.outputInterval = 86400./20.;
-//            
-//            [qg runSimulationToTime: 40*86400];
-//        }
-        
+		
+		NSURL *restartURLx4 = [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent: [baseName stringByAppendingString: @"@x4.nc"]];
+		if (![fileManager fileExistsAtPath: restartURLx4.path])
+		{
+			Quasigeostrophy2D *qg = [[Quasigeostrophy2D alloc] initWithFile:restartURLx2 resolutionDoubling:YES equation: equation];
+			qg.shouldForce = YES;
+			
+			qg.outputFile = restartURLx4;
+			qg.shouldAdvectFloats = NO;
+			qg.shouldAdvectTracer = NO;
+			qg.outputInterval = 10*86400.;
+			
+			[qg runSimulationToTime: 101*86400];
+		}
+		
         /************************************************************************************************/
         /*		Create the integrator for the unforced QG layer											*/
         /************************************************************************************************/
         
-        Quasigeostrophy2D *qg = [[Quasigeostrophy2D alloc] initWithFile:restartURLx2 resolutionDoubling:NO equation: equation];
+        Quasigeostrophy2D *qg = [[Quasigeostrophy2D alloc] initWithFile:restartURLx4 resolutionDoubling:NO equation: equation];
         qg.shouldForce = NO;
         
         GLFloat maxU = sqrt([[[[[qg.ssh y] spatialDomain] times: [[qg.ssh y] spatialDomain]] plus: [[[qg.ssh x] spatialDomain] times: [[qg.ssh x] spatialDomain]]] maxNow]);
         NSLog(@"Maximum velocity in QG layer: %.1f cm/s", U_scale*maxU*100);
-        return 0;
-        /************************************************************************************************/
+
+		/************************************************************************************************/
         /*		Create the initial conditions for the slab layer                                        */
         /************************************************************************************************/
                 
