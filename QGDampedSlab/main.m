@@ -56,7 +56,7 @@ int main (int argc, const char * argv[])
         /*		Spin up the lower (QG) layer															*/
         /************************************************************************************************/
         
-        NSString *baseName = @"QGTurbulence_0";
+        NSString *baseName = @"QGTurbulence_2";
         NSURL *restartFile = [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent: [baseName stringByAppendingString: @".nc"]];
         NSFileManager *fileManager = [[NSFileManager alloc] init];
         
@@ -66,9 +66,9 @@ int main (int argc, const char * argv[])
             
             qg.shouldUseBeta = NO;
             qg.shouldUseSVV = YES;
-            qg.shouldAntiAlias = NO;
+            qg.shouldAntiAlias = YES;
             qg.shouldForce = YES;
-            qg.forcingFraction = 32;
+            qg.forcingFraction = 20;
             qg.forcingWidth = 1;
             qg.f_zeta = .2;
             qg.forcingDecorrelationTime = HUGE_VAL;
@@ -79,7 +79,7 @@ int main (int argc, const char * argv[])
             qg.shouldAdvectFloats = NO;
             qg.shouldAdvectTracer = NO;
             qg.outputInterval = 50*86400.;
-			qg.shouldWriteRV = NO;
+			qg.shouldWriteRV = YES;
             [qg runSimulationToTime: 1501*86400];
         }
         
@@ -93,6 +93,7 @@ int main (int argc, const char * argv[])
             qg.shouldAdvectFloats = NO;
             qg.shouldAdvectTracer = NO;
             qg.outputInterval = 10*86400.;
+            qg.shouldWriteRV = YES;
             
             [qg runSimulationToTime: 101*86400];
         }
@@ -107,6 +108,7 @@ int main (int argc, const char * argv[])
 			qg.shouldAdvectFloats = NO;
 			qg.shouldAdvectTracer = NO;
 			qg.outputInterval = 10*86400.;
+            qg.shouldWriteRV = YES;
 			
 			[qg runSimulationToTime: 101*86400];
 		}
