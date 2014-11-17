@@ -26,7 +26,7 @@ int main (int argc, const char * argv[])
         NSUInteger aspectRatio = 1;
         NSUInteger floatFraction = 4;
         
-		GLFloat maxTime = 150*86400;
+		GLFloat maxTime = 100*86400;
 		GLFloat dampingOrder=2; // order of the damping operator. Order 1 is harmonic, order 2 is biharmonic, etc.
 		GLFloat dampingTime=3600; // e-folding time scale of the Nyquist frequency.
 		GLFloat linearDampingTime = 4*86400;
@@ -56,7 +56,7 @@ int main (int argc, const char * argv[])
         /*		Spin up the lower (QG) layer															*/
         /************************************************************************************************/
         
-        NSString *baseName = @"QGTurbulence_2";
+        NSString *baseName = @"QGTurbulence";
         NSURL *restartFile = [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent: [baseName stringByAppendingString: @".nc"]];
         NSFileManager *fileManager = [[NSFileManager alloc] init];
         
@@ -178,9 +178,10 @@ int main (int argc, const char * argv[])
         /*		Create a NetCDF file and mutable variables in order to record some of the time steps.	*/
         /************************************************************************************************/
         
-        GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent:@"QGDampedSlab.nc"] forEquation: equation overwriteExisting: YES];
-        
-        GLFunction *dimensionalEta1 = [eta1_0 scaleVariableBy: qg.N_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
+        //GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent:@"QGDampedSlab.nc"] forEquation: equation overwriteExisting: YES];
+		GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [NSURL fileURLWithPath: @"/Volumes/Data/QGPlusSlab/QGDampedSlab.nc" ] forEquation: equation overwriteExisting: YES];
+
+		GLFunction *dimensionalEta1 = [eta1_0 scaleVariableBy: qg.N_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
         GLMutableVariable *eta1History = [dimensionalEta1 variableByAddingDimension: tDim];
         eta1History.name = @"eta1";
         eta1History.units = @"m";
@@ -298,7 +299,7 @@ int main (int argc, const char * argv[])
         //integrator.absoluteTolerance = @[@(1e-3)];
 		
         
-        for (GLFloat time = (86400/20)/qg.T_QG; time < maxTime/qg.T_QG; time += (86400/20)/qg.T_QG)
+        for (GLFloat time = (86400/24)/qg.T_QG; time < maxTime/qg.T_QG; time += (86400/24)/qg.T_QG)
         {
             @autoreleasepool {
                 NSArray *yin = [integrator stepForwardToTime: time];
