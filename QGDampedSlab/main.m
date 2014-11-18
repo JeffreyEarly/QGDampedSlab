@@ -26,7 +26,7 @@ int main (int argc, const char * argv[])
         NSUInteger aspectRatio = 1;
         NSUInteger floatFraction = 4;
         
-		GLFloat maxTime = 150*86400;
+		GLFloat maxTime = 100*86400;
 		GLFloat dampingOrder=2; // order of the damping operator. Order 1 is harmonic, order 2 is biharmonic, etc.
 		GLFloat dampingTime=3600; // e-folding time scale of the Nyquist frequency.
 		GLFloat linearDampingTime = 4*86400;
@@ -68,7 +68,7 @@ int main (int argc, const char * argv[])
             qg.shouldUseSVV = YES;
             qg.shouldAntiAlias = YES;
             qg.shouldForce = YES;
-            qg.forcingFraction = 20;
+            qg.forcingFraction = 2;
             qg.forcingWidth = 1;
             qg.f_zeta = .2;
             qg.forcingDecorrelationTime = HUGE_VAL;
@@ -78,11 +78,11 @@ int main (int argc, const char * argv[])
             qg.outputFile = restartFile;
             qg.shouldAdvectFloats = NO;
             qg.shouldAdvectTracer = NO;
-            qg.outputInterval = 50*86400.;
+            qg.outputInterval = 250*86400.;
 			qg.shouldWriteRV = YES;
-            [qg runSimulationToTime: 1501*86400];
+            [qg runSimulationToTime: 15001*86400];
         }
-        
+
         NSURL *restartURLx2 = [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent: [baseName stringByAppendingString: @"@x2.nc"]];
         if (![fileManager fileExistsAtPath: restartURLx2.path])
         {
@@ -95,9 +95,9 @@ int main (int argc, const char * argv[])
             qg.outputInterval = 10*86400.;
             qg.shouldWriteRV = YES;
             
-            [qg runSimulationToTime: 101*86400];
+            [qg runSimulationToTime: 201*86400];
         }
-		
+        
 		NSURL *restartURLx4 = [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent: [baseName stringByAppendingString: @"@x4.nc"]];
 		if (![fileManager fileExistsAtPath: restartURLx4.path])
 		{
@@ -110,9 +110,9 @@ int main (int argc, const char * argv[])
 			qg.outputInterval = 10*86400.;
             qg.shouldWriteRV = YES;
 			
-			[qg runSimulationToTime: 101*86400];
+			[qg runSimulationToTime: 201*86400];
 		}
-		
+        
         /************************************************************************************************/
         /*		Create the integrator for the unforced QG layer											*/
         /************************************************************************************************/
@@ -178,7 +178,8 @@ int main (int argc, const char * argv[])
         /*		Create a NetCDF file and mutable variables in order to record some of the time steps.	*/
         /************************************************************************************************/
         
-        GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent:@"QGDampedSlab.nc"] forEquation: equation overwriteExisting: YES];
+        //GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent:@"QGDampedSlab.nc"] forEquation: equation overwriteExisting: YES];
+        GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [NSURL fileURLWithPath: @"/Volumes/Music/Model_Output/QGDampedSlab.nc"] forEquation: equation overwriteExisting: YES];
         
         GLFunction *dimensionalEta1 = [eta1_0 scaleVariableBy: qg.N_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
         GLMutableVariable *eta1History = [dimensionalEta1 variableByAddingDimension: tDim];
@@ -298,7 +299,7 @@ int main (int argc, const char * argv[])
         //integrator.absoluteTolerance = @[@(1e-3)];
 		
         
-        for (GLFloat time = (86400/20)/qg.T_QG; time < maxTime/qg.T_QG; time += (86400/20)/qg.T_QG)
+        for (GLFloat time = (86400/24)/qg.T_QG; time < maxTime/qg.T_QG; time += (86400/24)/qg.T_QG)
         {
             @autoreleasepool {
                 NSArray *yin = [integrator stepForwardToTime: time];
