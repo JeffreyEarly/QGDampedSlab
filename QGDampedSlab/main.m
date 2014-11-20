@@ -42,6 +42,7 @@ int main (int argc, const char * argv[])
 		GLFloat L_1 = sqrt( gprime * H1) / f0;
 		GLFloat L_2 = sqrt( gprime * H2) / f0;
         GLFloat U_scale = beta*L_2*L_2;
+        GLFloat N_scale = H2*beta*L_2*L_2/sqrt(gprime*H2);
 		
         
         GLDimension *xDim = [[GLDimension alloc] initDimensionWithGrid: kGLPeriodicGrid nPoints:nPoints domainMin:-domainWidth/2.0 length:domainWidth];
@@ -56,7 +57,7 @@ int main (int argc, const char * argv[])
         /*		Spin up the lower (QG) layer															*/
         /************************************************************************************************/
         
-        NSString *baseName = @"QGTurbulence";
+        NSString *baseName = @"QGTurbulence_2";
         NSURL *restartFile = [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent: [baseName stringByAppendingString: @".nc"]];
         NSFileManager *fileManager = [[NSFileManager alloc] init];
         
@@ -180,7 +181,7 @@ int main (int argc, const char * argv[])
         
         //GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent:@"QGDampedSlab.nc"] forEquation: equation overwriteExisting: YES];
         
-        GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [NSURL fileURLWithPath: @"/Volumes/Music/Model_Output/QGDampedSlab.nc"] forEquation: equation overwriteExisting: YES];
+        GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [NSURL fileURLWithPath: @"/Volumes/Music/Model_Output/QGDampedSlab2.nc"] forEquation: equation overwriteExisting: YES];
         
         GLFunction *dimensionalEta1 = [eta1_0 scaleVariableBy: qg.N_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
 
