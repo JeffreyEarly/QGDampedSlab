@@ -1,8 +1,8 @@
-day = 50;
+day = 60;
 
 %file = '/Users/jearly/Desktop/QGDampedSlab.nc';
-file = '/Volumes/Data/QGPlusSlab/QGDampedSlab.nc';
-output = '/Volumes/Data/QGPlusSlab/QGDampedSlabTrajectories.mat';
+file = '/Volumes/Music/Model_Output/QGDampedSlab.nc';
+output = '/Volumes/Music/Model_Output/QGDampedSlabTrajectories.mat';
 t = ncread(file, 'time');
 x = ncread(file, 'x');
 y = ncread(file, 'y');
