@@ -49,7 +49,7 @@ int main (int argc, const char * argv[])
         xDim.name = @"x"; xDim.units = @"m";
         GLDimension *yDim = [[GLDimension alloc] initDimensionWithGrid: kGLPeriodicGrid nPoints:nPoints/aspectRatio domainMin:-domainWidth/(2.0*aspectRatio) length: domainWidth/aspectRatio];
         yDim.name = @"y"; yDim.units = @"m";
-        GLDimension *tDim = [[GLDimension alloc] initDimensionWithGrid: kGLEndpointGrid nPoints: 1 + maxTime/24.0  domainMin:0 length:maxTime];
+        GLDimension *tDim = [[GLDimension alloc] initDimensionWithGrid: kGLEndpointGrid nPoints: 1 + maxTime*24.0  domainMin:0 length:maxTime];
         tDim.name = @"time"; tDim.units = @"s";
         GLEquation *equation = [[GLEquation alloc] init];
         
@@ -183,65 +183,7 @@ int main (int argc, const char * argv[])
 		
         GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [NSURL fileURLWithPath: @"/Volumes/Music/Model_Output/QGDampedSlab2.nc"] forEquation: equation overwriteExisting: YES];
 		
-		GLDimension *tDimND = [tDim scaledBy: 1/qg.T_QG translatedBy: 0.0 withUnits: @""];
-		
-		
-//        GLFunction *dimensionalEta1 = [eta1_0 scaleVariableBy: qg.N_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
-//
-//        GLMutableVariable *eta1History = [dimensionalEta1 variableByAddingDimension: tDim];
-//        eta1History.name = @"eta1";
-//        eta1History.units = @"m";
-//        eta1History = [netcdfFile addVariable: eta1History];
-//        
-//        GLFunction *dimensionalEta2 = [[qg.ssh spatialDomain] scaleVariableBy: qg.N_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
-//        GLMutableVariable *eta2History = [dimensionalEta2 variableByAddingDimension: tDim];
-//        eta2History.name = @"eta2";
-//        eta2History.units = @"m";
-//        eta2History = [netcdfFile addVariable: eta2History];
-//        
-//        GLFunction *dimensionalU = [uI_0 scaleVariableBy: U_scale withUnits: @"m/s" dimensionsBy: qg.L_QG units: @"m"];
-//        GLMutableVariable *uHistory = [dimensionalU variableByAddingDimension: tDim];
-//        uHistory.name = @"u";
-//        uHistory.units = @"m/s";
-//        uHistory = [netcdfFile addVariable: uHistory];
-//        
-//        GLFunction *dimensionalV = [vI_0 scaleVariableBy: U_scale withUnits: @"m/s" dimensionsBy: qg.L_QG units: @"m"];
-//        GLMutableVariable *vHistory = [dimensionalV variableByAddingDimension: tDim];
-//        vHistory.name = @"v";
-//        vHistory.units = @"m/s";
-//        vHistory = [netcdfFile addVariable: vHistory];
-//        
-//        GLFunction *tau0_x = [GLFunction functionOfRealTypeWithDimensions: @[] forEquation: equation];
-//		GLMutableVariable *tau_xHistory = [tau0_x variableByAddingDimension: tDim];
-//		tau_xHistory.name = @"tau_x";
-//        tau_xHistory.units = @"N/m^2";
-//		tau_xHistory = [netcdfFile addVariable: tau_xHistory];
-//        
-//        GLFunction *tau0_y = [GLFunction functionOfRealTypeWithDimensions: @[] forEquation: equation];
-//		GLMutableVariable *tau_yHistory = [tau0_y variableByAddingDimension: tDim];
-//		tau_yHistory.name = @"tau_y";
-//        tau_yHistory.units = @"N/m^2";
-//		tau_yHistory = [netcdfFile addVariable: tau_yHistory];
-//		
-//        GLFunction *dimensionalXPosition1 = [xPos1 scaleVariableBy: qg.L_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
-//		GLMutableVariable *xPosition1History = [dimensionalXPosition1 variableByAddingDimension: tDim];
-//		xPosition1History.name = @"x-position-layer-1";
-//		xPosition1History = [netcdfFile addVariable: xPosition1History];
-//		
-//        GLFunction *dimensionalYPosition1 = [yPos1 scaleVariableBy: qg.L_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
-//		GLMutableVariable *yPosition1History = [dimensionalYPosition1 variableByAddingDimension: tDim];
-//		yPosition1History.name = @"y-position-layer-1";
-//		yPosition1History = [netcdfFile addVariable: yPosition1History];
-//		
-//		GLFunction *dimensionalXPosition2 = [xPos2 scaleVariableBy: qg.L_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
-//		GLMutableVariable *xPosition2History = [dimensionalXPosition2 variableByAddingDimension: tDim];
-//		xPosition2History.name = @"x-position-layer-2";
-//		xPosition2History = [netcdfFile addVariable: xPosition2History];
-//		
-//		GLFunction *dimensionalYPosition2 = [yPos2 scaleVariableBy: qg.L_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
-//		GLMutableVariable *yPosition2History = [dimensionalYPosition2 variableByAddingDimension: tDim];
-//		yPosition2History.name = @"y-position-layer-2";
-//		yPosition2History = [netcdfFile addVariable: yPosition2History];
+		GLDimension *tDimND = [tDim scaledBy: 1./qg.T_QG translatedBy: 0.0 withUnits: @""];
 		
         /************************************************************************************************/
         /*		Determine an appropriate time step based on the CFL condition.							*/
@@ -327,51 +269,6 @@ int main (int argc, const char * argv[])
 			return scaledVariables;
 		}];
 		
-//        for (GLFloat time = (86400/24)/qg.T_QG; time < maxTime/qg.T_QG; time += (86400/24)/qg.T_QG)
-//        {
-//            @autoreleasepool {
-//                NSArray *yin = [integrator stepForwardToTime: time];
-//                
-//                NSLog(@"Logging day: %f, step size: %f.", (qg.T_QG*integrator.currentTime/86400), integrator.lastStepSize*qg.T_QG);
-//                
-//                [tDim addPoint: @(time*qg.T_QG)];
-//                
-//                GLFunction *eta2 = [[[yin[0] differentiateWithOperator: qg.inverseLaplacianMinusOne] spatialDomain] scaleVariableBy: qg.N_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
-//                [eta2History concatenateWithLowerDimensionalVariable: eta2 alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
-//                
-//                GLFunction *u = [yin[1] scaleVariableBy: U_scale withUnits: @"m/s" dimensionsBy: qg.L_QG units: @"m"];
-//                [uHistory concatenateWithLowerDimensionalVariable: u alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
-//                
-//                GLFunction *v = [yin[2] scaleVariableBy: U_scale withUnits: @"m/s" dimensionsBy: qg.L_QG units: @"m"];
-//                [vHistory concatenateWithLowerDimensionalVariable: v alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
-//                
-//                GLFunction *eta1 = [[yin[3] spatialDomain] scaleVariableBy: qg.N_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
-//                [eta1History concatenateWithLowerDimensionalVariable: eta1 alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
-//				
-//				GLFunction *xPos1 = [yin[4] scaleVariableBy: qg.L_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
-//				[xPosition1History concatenateWithLowerDimensionalVariable: xPos1 alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
-//				
-//				GLFunction *yPos1 = [yin[5] scaleVariableBy: qg.L_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
-//				[yPosition1History concatenateWithLowerDimensionalVariable: yPos1 alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
-//				
-//				GLFunction *xPos2 = [yin[6] scaleVariableBy: qg.L_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
-//				[xPosition2History concatenateWithLowerDimensionalVariable: xPos2 alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
-//				
-//				GLFunction *yPos2 = [yin[7] scaleVariableBy: qg.L_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
-//				[yPosition2History concatenateWithLowerDimensionalVariable: yPos2 alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
-//				
-//                GLSimpleInterpolationOperation *interp = [[GLSimpleInterpolationOperation alloc] initWithFirstOperand:  @[tau_x, tau_y] secondOperand: @[[GLScalar scalarWithValue: time forEquation:equation]]];
-//                
-//                GLScalar *tau_x_i = [interp.result[0] scaleBy: 1/tau_scale withUnits: @"N/m^2"];
-//                GLScalar *tau_y_i = [interp.result[1] scaleBy: 1/tau_scale withUnits: @"N/m^2"];
-//                [tau_x_i solve];
-//                [tau_y_i solve];
-//                [tau_xHistory concatenateWithLowerDimensionalVariable: tau_x_i alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
-//                [tau_yHistory concatenateWithLowerDimensionalVariable: tau_y_i alongDimensionAtIndex:0 toIndex: (tDim.nPoints-1)];
-//                
-//                [netcdfFile waitUntilAllOperationsAreFinished];
-//            }
-//        }
 		
 		NSLog(@"Close the NetCDF file and wrap up");
 		
