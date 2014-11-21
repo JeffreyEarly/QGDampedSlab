@@ -27,8 +27,8 @@ int main (int argc, const char * argv[])
         NSUInteger floatFraction = 4;
         
 		GLFloat maxTime = 100*86400;
-		GLFloat dampingOrder=2; // order of the damping operator. Order 1 is harmonic, order 2 is biharmonic, etc.
-		GLFloat dampingTime=3600; // e-folding time scale of the Nyquist frequency.
+		//GLFloat dampingOrder=2; // order of the damping operator. Order 1 is harmonic, order 2 is biharmonic, etc.
+		//GLFloat dampingTime=3600; // e-folding time scale of the Nyquist frequency.
 		GLFloat linearDampingTime = 4*86400;
 		
 		// Standard constants
@@ -175,15 +175,7 @@ int main (int argc, const char * argv[])
 		GLFunction *xPos2 = [GLFunction functionOfRealTypeFromDimension: xFloatDim withDimensions: floatDims forEquation: equation];
 		GLFunction *yPos2 = [GLFunction functionOfRealTypeFromDimension: yFloatDim withDimensions: floatDims forEquation: equation];
 		
-        /************************************************************************************************/
-        /*		Create a NetCDF file and mutable variables in order to record some of the time steps.	*/
-        /************************************************************************************************/
-        
-        //GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent:@"QGDampedSlab.nc"] forEquation: equation overwriteExisting: YES];
-		
-        GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [NSURL fileURLWithPath: @"/Volumes/Music/Model_Output/QGDampedSlab2.nc"] forEquation: equation overwriteExisting: YES];
-		
-		GLDimension *tDimND = [tDim scaledBy: 1./qg.T_QG translatedBy: 0.0 withUnits: @""];
+
 		
         /************************************************************************************************/
         /*		Determine an appropriate time step based on the CFL condition.							*/
@@ -247,16 +239,24 @@ int main (int argc, const char * argv[])
         }];
         //integrator.absoluteTolerance = @[@(1e-3)];
 		
+		/************************************************************************************************/
+		/*		Create a NetCDF file and mutable variables in order to record some of the time steps.	*/
+		/************************************************************************************************/
 		
-		[integrator integrateAlongDimension: tDimND toFile: netcdfFile withTimeScale: qg.T_QG variables: ^(GLScalar *t, NSArray *y) {
-			//NSLog(@"Logging day: %f, step size: %f.", (qg.T_QG*integrator.currentTime/86400), integrator.lastStepSize*qg.T_QG);
-			NSLog(@"Logging day: %f", (*(t.pointerValue))*qg.T_QG);
+		//GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent:@"QGDampedSlab.nc"] forEquation: equation overwriteExisting: YES];
+		GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [NSURL fileURLWithPath: @"/Volumes/Music/Model_Output/QGDampedSlab2.nc"] forEquation: equation overwriteExisting: YES];
+		GLDimension *tDimND = [tDim scaledBy: 1./qg.T_QG translatedBy: 0.0 withUnits: @""];
+		
+		[qg addMetadataToNetCDFFile: netcdfFile];
+		
+		[integrator integrateAlongDimension: tDimND toFile: netcdfFile withTimeScale: qg.T_QG variables: ^(GLScalar *t, NSArray *y, GLRungeKuttaOperation* rkint) {
+			NSLog(@"Logging day: %f, step size: %f.", (qg.T_QG*rkint.currentTime/86400), rkint.lastStepSize*qg.T_QG);
 			
 			NSMutableDictionary *scaledVariables = [NSMutableDictionary dictionary];
-			scaledVariables[@"eta2"] = [[[y[0] differentiateWithOperator: qg.inverseLaplacianMinusOne] spatialDomain] scaleVariableBy: qg.N_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
-			scaledVariables[@"u"] = [y[1] scaleVariableBy: U_scale withUnits: @"m/s" dimensionsBy: qg.L_QG units: @"m"];
-			scaledVariables[@"v"] = [y[2] scaleVariableBy: U_scale withUnits: @"m/s" dimensionsBy: qg.L_QG units: @"m"];
-			scaledVariables[@"eta1"] = [[y[3] spatialDomain] scaleVariableBy: qg.N_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
+			scaledVariables[@"eta-2"] = [[[y[0] differentiateWithOperator: qg.inverseLaplacianMinusOne] spatialDomain] scaleVariableBy: qg.N_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
+			scaledVariables[@"u-1"] = [y[1] scaleVariableBy: U_scale withUnits: @"m/s" dimensionsBy: qg.L_QG units: @"m"];
+			scaledVariables[@"v-1"] = [y[2] scaleVariableBy: U_scale withUnits: @"m/s" dimensionsBy: qg.L_QG units: @"m"];
+			scaledVariables[@"eta-1"] = [[y[3] spatialDomain] scaleVariableBy: N_scale withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
 			scaledVariables[@"x-position-layer-1"] = [y[4] scaleVariableBy: qg.L_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
 			scaledVariables[@"y-position-layer-1"] = [y[5] scaleVariableBy: qg.L_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
 			scaledVariables[@"x-position-layer-2"] = [y[6] scaleVariableBy: qg.L_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
