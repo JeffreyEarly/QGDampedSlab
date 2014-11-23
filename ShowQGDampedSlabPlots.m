@@ -1,8 +1,8 @@
-day = 60;
+day = 300;
 
 %file = '/Users/jearly/Desktop/QGDampedSlab.nc';
-file = '/Volumes/Music/Model_Output/QGDampedSlab.nc';
-output = '/Volumes/Music/Model_Output/QGDampedSlabTrajectories.mat';
+file = '/Volumes/Music/Model_Output/QGDampedSlab_Monopole.nc';
+%output = '/Volumes/Music/Model_Output/QGDampedSlabTrajectories_Monopole.mat';
 t = ncread(file, 'time');
 x = ncread(file, 'x');
 y = ncread(file, 'y');
@@ -34,10 +34,10 @@ yPosition2 = squeeze(ncread(file, 'y-position-layer-2', [ceil(stride/2) ceil(str
 xpos2 = (reshape(xPosition2, [length(yFloat)*length(xFloat)/(stride*stride), timeIndex]))';
 ypos2 = (reshape(yPosition2, [length(yFloat)*length(xFloat)/(stride*stride), timeIndex]))';
 
-eta1 = squeeze(ncread(file, 'eta1', [1 1 timeIndex], [Inf Inf 1], [1 1 1]));
-eta2 = squeeze(ncread(file, 'eta2', [1 1 timeIndex], [Inf Inf 1], [1 1 1]));
+eta1 = squeeze(ncread(file, 'eta-1', [1 1 timeIndex], [Inf Inf 1], [1 1 1]));
+eta2 = squeeze(ncread(file, 'eta-2', [1 1 timeIndex], [Inf Inf 1], [1 1 1]));
 
-save(output, 't', 'xpos1', 'ypos1', 'xpos2', 'ypos2')
+%save(output, 't', 'xpos1', 'ypos1', 'xpos2', 'ypos2')
 
 theFigure = figure('Position', [50 50 1000 1000]);
 theFigure.PaperPositionMode = 'auto';
@@ -94,7 +94,7 @@ ylim([min(min(ypos1)) max(max(ypos1))])
 
 llFloatPlot = subplot(2,2,4);
 plot(xpos2, ypos2)
-llFloatPlot.Title.String = 'Upper layer floats';
+llFloatPlot.Title.String = 'Lower layer floats';
 xlim([min(min(xpos2)) max(max(xpos2))])
 ylim([min(min(ypos2)) max(max(ypos2))])
 

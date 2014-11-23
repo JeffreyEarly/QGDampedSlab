@@ -10,6 +10,11 @@
 #import <GLNumericalModelingKit/GLNumericalModelingKit.h>
 #import <GLOceanKit/GLOceanKit.h>
 
+typedef NS_ENUM(NSUInteger, ExperimentType) {
+    kTurbulentExperimentType = 0,
+    kMonopoleExperimentType = 1
+};
+
 int main (int argc, const char * argv[])
 {
 	
@@ -20,13 +25,15 @@ int main (int argc, const char * argv[])
 		GLFloat dRho1 = 1E-3;
 		GLFloat dRho2 = 1E-3;
 		GLFloat latitude = 24;
+        ExperimentType experiment = kMonopoleExperimentType;
 		
         GLFloat domainWidth = 1000e3; // m
         NSUInteger nPoints = 256;
         NSUInteger aspectRatio = 1;
         NSUInteger floatFraction = 4;
         
-		GLFloat maxTime = 100*86400;
+		GLFloat maxTime = 300*86400;
+        GLFloat outputInterval = 86400/24;
 		//GLFloat dampingOrder=2; // order of the damping operator. Order 1 is harmonic, order 2 is biharmonic, etc.
 		//GLFloat dampingTime=3600; // e-folding time scale of the Nyquist frequency.
 		GLFloat linearDampingTime = 4*86400;
@@ -49,7 +56,7 @@ int main (int argc, const char * argv[])
         xDim.name = @"x"; xDim.units = @"m";
         GLDimension *yDim = [[GLDimension alloc] initDimensionWithGrid: kGLPeriodicGrid nPoints:nPoints/aspectRatio domainMin:-domainWidth/(2.0*aspectRatio) length: domainWidth/aspectRatio];
         yDim.name = @"y"; yDim.units = @"m";
-        GLDimension *tDim = [[GLDimension alloc] initDimensionWithGrid: kGLEndpointGrid nPoints: 1 + maxTime*24.0  domainMin:0 length:maxTime];
+        GLDimension *tDim = [[GLDimension alloc] initDimensionWithGrid: kGLEndpointGrid nPoints: 1 + round(maxTime/outputInterval)  domainMin:0 length:maxTime];
         tDim.name = @"time"; tDim.units = @"s";
         GLEquation *equation = [[GLEquation alloc] init];
         
@@ -57,70 +64,92 @@ int main (int argc, const char * argv[])
         /*		Spin up the lower (QG) layer															*/
         /************************************************************************************************/
         
-        NSString *baseName = @"QGTurbulence_2";
-        NSURL *restartFile = [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent: [baseName stringByAppendingString: @".nc"]];
-        NSFileManager *fileManager = [[NSFileManager alloc] init];
-        
-        if (![fileManager fileExistsAtPath: restartFile.path])
+        Quasigeostrophy2D *qg;
+        if (experiment == kTurbulentExperimentType)
         {
-            Quasigeostrophy2D *qg = [[Quasigeostrophy2D alloc] initWithDimensions: @[xDim, yDim] depth: h2 latitude: latitude equation: equation];
+            NSString *baseName = @"QGTurbulence_2";
+            NSURL *restartFile = [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent: [baseName stringByAppendingString: @".nc"]];
+            NSFileManager *fileManager = [[NSFileManager alloc] init];
             
+            if (![fileManager fileExistsAtPath: restartFile.path])
+            {
+                Quasigeostrophy2D *qgSpinup = [[Quasigeostrophy2D alloc] initWithDimensions: @[xDim, yDim] depth: h2 latitude: latitude equation: equation];
+                
+                qgSpinup.shouldUseBeta = NO;
+                qgSpinup.shouldUseSVV = YES;
+                qgSpinup.shouldAntiAlias = YES;
+                qgSpinup.shouldForce = YES;
+                qgSpinup.forcingFraction = 2;
+                qgSpinup.forcingWidth = 1;
+                qgSpinup.f_zeta = .2;
+                qgSpinup.forcingDecorrelationTime = HUGE_VAL;
+                qgSpinup.thermalDampingFraction = 0.0;
+                qgSpinup.frictionalDampingFraction = 2.0;
+                
+                qgSpinup.outputFile = restartFile;
+                qgSpinup.shouldAdvectFloats = NO;
+                qgSpinup.shouldAdvectTracer = NO;
+                qgSpinup.outputInterval = 250*86400.;
+                qgSpinup.shouldWriteRV = YES;
+                [qgSpinup runSimulationToTime: 15001*86400];
+            }
+
+            NSURL *restartURLx2 = [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent: [baseName stringByAppendingString: @"@x2.nc"]];
+            if (![fileManager fileExistsAtPath: restartURLx2.path])
+            {
+                Quasigeostrophy2D *qgSpinup = [[Quasigeostrophy2D alloc] initWithFile:restartFile resolutionDoubling:YES equation: equation];
+                qgSpinup.shouldForce = YES;
+                
+                qgSpinup.outputFile = restartURLx2;
+                qgSpinup.shouldAdvectFloats = NO;
+                qgSpinup.shouldAdvectTracer = NO;
+                qgSpinup.outputInterval = 10*86400.;
+                qgSpinup.shouldWriteRV = YES;
+                
+                [qgSpinup runSimulationToTime: 201*86400];
+            }
+            
+            NSURL *restartURLx4 = [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent: [baseName stringByAppendingString: @"@x4.nc"]];
+            if (![fileManager fileExistsAtPath: restartURLx4.path])
+            {
+                Quasigeostrophy2D *qgSpinup = [[Quasigeostrophy2D alloc] initWithFile:restartURLx2 resolutionDoubling:YES equation: equation];
+                qgSpinup.shouldForce = YES;
+                
+                qgSpinup.outputFile = restartURLx4;
+                qgSpinup.shouldAdvectFloats = NO;
+                qgSpinup.shouldAdvectTracer = NO;
+                qgSpinup.outputInterval = 10*86400.;
+                qgSpinup.shouldWriteRV = YES;
+                
+                [qgSpinup runSimulationToTime: 201*86400];
+            }
+            
+            /************************************************************************************************/
+            /*		Create the integrator for the unforced QG layer											*/
+            /************************************************************************************************/
+            
+            qg = [[Quasigeostrophy2D alloc] initWithFile:restartURLx4 resolutionDoubling:NO equation: equation];
+            qg.shouldForce = NO;
+        }
+        else if (experiment == kMonopoleExperimentType)
+        {
+            qg = [[Quasigeostrophy2D alloc] initWithDimensions: @[xDim, yDim] depth: h2 latitude: latitude equation: equation];
             qg.shouldUseBeta = NO;
             qg.shouldUseSVV = YES;
             qg.shouldAntiAlias = YES;
-            qg.shouldForce = YES;
-            qg.forcingFraction = 2;
-            qg.forcingWidth = 1;
-            qg.f_zeta = .2;
-            qg.forcingDecorrelationTime = HUGE_VAL;
-            qg.thermalDampingFraction = 0.0;
-            qg.frictionalDampingFraction = 2.0;
+            qg.shouldForce = NO;
             
-            qg.outputFile = restartFile;
-            qg.shouldAdvectFloats = NO;
-            qg.shouldAdvectTracer = NO;
-            qg.outputInterval = 250*86400.;
-			qg.shouldWriteRV = YES;
-            [qg runSimulationToTime: 15001*86400];
+            GLFunction *x = [GLFunction functionOfRealTypeFromDimension: qg.dimensions[0] withDimensions: qg.dimensions forEquation: equation];
+            GLFunction *y = [GLFunction functionOfRealTypeFromDimension: qg.dimensions[1] withDimensions: qg.dimensions forEquation: equation];
+            
+            // We're going to plop down a gaussian = amplitude * exp( - ((x-x0)*(x-x0) + (y-y0)*(y-y0))/(length*length) );
+            GLFloat amplitude = 15.0e-2/qg.N_QG;
+            GLFloat length = 80e3/qg.L_QG;
+            
+            GLFunction *r2 = [[x times: x] plus: [y times: y]];
+            qg.ssh = [[[r2 times: @(-1.0/(length*length))] exponentiate] times: @(amplitude)];
         }
-
-        NSURL *restartURLx2 = [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent: [baseName stringByAppendingString: @"@x2.nc"]];
-        if (![fileManager fileExistsAtPath: restartURLx2.path])
-        {
-            Quasigeostrophy2D *qg = [[Quasigeostrophy2D alloc] initWithFile:restartFile resolutionDoubling:YES equation: equation];
-            qg.shouldForce = YES;
             
-            qg.outputFile = restartURLx2;
-            qg.shouldAdvectFloats = NO;
-            qg.shouldAdvectTracer = NO;
-            qg.outputInterval = 10*86400.;
-            qg.shouldWriteRV = YES;
-            
-            [qg runSimulationToTime: 201*86400];
-        }
-        
-		NSURL *restartURLx4 = [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent: [baseName stringByAppendingString: @"@x4.nc"]];
-		if (![fileManager fileExistsAtPath: restartURLx4.path])
-		{
-			Quasigeostrophy2D *qg = [[Quasigeostrophy2D alloc] initWithFile:restartURLx2 resolutionDoubling:YES equation: equation];
-			qg.shouldForce = YES;
-			
-			qg.outputFile = restartURLx4;
-			qg.shouldAdvectFloats = NO;
-			qg.shouldAdvectTracer = NO;
-			qg.outputInterval = 10*86400.;
-            qg.shouldWriteRV = YES;
-			
-			[qg runSimulationToTime: 201*86400];
-		}
-        
-        /************************************************************************************************/
-        /*		Create the integrator for the unforced QG layer											*/
-        /************************************************************************************************/
-        
-        Quasigeostrophy2D *qg = [[Quasigeostrophy2D alloc] initWithFile:restartURLx4 resolutionDoubling:NO equation: equation];
-        qg.shouldForce = NO;
-        
         GLFloat maxU = sqrt([[[[[qg.ssh y] spatialDomain] times: [[qg.ssh y] spatialDomain]] plus: [[[qg.ssh x] spatialDomain] times: [[qg.ssh x] spatialDomain]]] maxNow]);
         NSLog(@"Maximum velocity in QG layer: %.1f cm/s", U_scale*maxU*100);
 
@@ -244,18 +273,30 @@ int main (int argc, const char * argv[])
 		/************************************************************************************************/
 		
 		//GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent:@"QGDampedSlab.nc"] forEquation: equation overwriteExisting: YES];
-		GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [NSURL fileURLWithPath: @"/Volumes/Music/Model_Output/QGDampedSlab2.nc"] forEquation: equation overwriteExisting: YES];
+		GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [NSURL fileURLWithPath: @"/Volumes/Music/Model_Output/QGDampedSlab_Monopole.nc"] forEquation: equation overwriteExisting: YES];
 		GLDimension *tDimND = [tDim scaledBy: 1./qg.T_QG translatedBy: 0.0 withUnits: @""];
 		
 		[qg addMetadataToNetCDFFile: netcdfFile];
-		
-		[integrator integrateAlongDimension: tDimND toFile: netcdfFile withTimeScale: qg.T_QG variables: ^(GLScalar *t, NSArray *y, GLRungeKuttaOperation* rkint) {
-			NSLog(@"Logging day: %f, step size: %f.", (qg.T_QG*rkint.currentTime/86400), rkint.lastStepSize*qg.T_QG);
+        [netcdfFile setGlobalAttribute: @(H1) forKey:@"H1"];
+        [netcdfFile setGlobalAttribute: @(H2) forKey:@"H2"];
+        [netcdfFile setGlobalAttribute: @(dRho1) forKey:@"dRho1"];
+		[netcdfFile setGlobalAttribute: @(dRho2) forKey:@"dRho2"];
+        
+        integrator.shouldDisplayProgress = YES;
+		[integrator integrateAlongDimension: tDimND toFile: netcdfFile withTimeScale: qg.T_QG variables: ^(GLScalar *t, NSArray *y) {
+			//NSLog(@"Logging day: %f, step size: %f.", (qg.T_QG*rkint.currentTime/86400), rkint.lastStepSize*qg.T_QG);
 			
 			NSMutableDictionary *scaledVariables = [NSMutableDictionary dictionary];
-			scaledVariables[@"eta-2"] = [[[y[0] differentiateWithOperator: qg.inverseLaplacianMinusOne] spatialDomain] scaleVariableBy: qg.N_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
-			scaledVariables[@"u-1"] = [y[1] scaleVariableBy: U_scale withUnits: @"m/s" dimensionsBy: qg.L_QG units: @"m"];
-			scaledVariables[@"v-1"] = [y[2] scaleVariableBy: U_scale withUnits: @"m/s" dimensionsBy: qg.L_QG units: @"m"];
+            
+            GLFunction *eta2 = [y[0] differentiateWithOperator: qg.inverseLaplacianMinusOne];
+            GLFunction *u2 = [[[eta2 y] spatialDomain] negate];
+            GLFunction *v2 = [[eta2 x] spatialDomain];
+            GLFunction *u1 = [y[1] plus: u2];
+            GLFunction *v1 = [y[2] plus: v2];
+            
+			scaledVariables[@"eta-2"] = [[eta2 spatialDomain] scaleVariableBy: -N_scale withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
+			scaledVariables[@"u-1"] = [u1 scaleVariableBy: U_scale withUnits: @"m/s" dimensionsBy: qg.L_QG units: @"m"];
+			scaledVariables[@"v-1"] = [v1 scaleVariableBy: U_scale withUnits: @"m/s" dimensionsBy: qg.L_QG units: @"m"];
 			scaledVariables[@"eta-1"] = [[y[3] spatialDomain] scaleVariableBy: N_scale withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
 			scaledVariables[@"x-position-layer-1"] = [y[4] scaleVariableBy: qg.L_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
 			scaledVariables[@"y-position-layer-1"] = [y[5] scaleVariableBy: qg.L_QG withUnits: @"m" dimensionsBy: qg.L_QG units: @"m"];
@@ -269,6 +310,7 @@ int main (int argc, const char * argv[])
 			return scaledVariables;
 		}];
 		
+        
 		
 		NSLog(@"Close the NetCDF file and wrap up");
 		
