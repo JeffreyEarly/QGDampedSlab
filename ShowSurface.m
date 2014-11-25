@@ -1,6 +1,9 @@
 file = '/Volumes/Data/QGPlusSlab/MonopoleExperiment/QGDampedSlab_Monopole.nc';
 FramesFolder ='/Volumes/Data/QGPlusSlab/MonopoleExperiment/FloatFrames';
 
+file = '/Volumes/Music/Model_Output/MonopoleExperiment/QGDampedSlab_Monopole.nc';
+FramesFolder ='/Volumes/Music/Model_Output/MonopoleExperiment/FloatFrames';
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % 	Make the frames folder
@@ -16,8 +19,8 @@ xFloat = ncread(file, 'x-float');
 yFloat = ncread(file, 'y-float');
 
 stride = 2;
-layer1floatSize = 7;
-layer2floatSize = 10;
+layer1floatSize = 10;
+layer2floatSize = 15;
 
 [X,Y] = meshgrid(x,y);
 
@@ -31,12 +34,12 @@ graymap = [linspace(.35,.85,128)', linspace(.35,.85,128)', linspace(.35,.85,128)
 combomap = [graymap;jet(128)];
 floatSize = [ layer2floatSize*layer2floatSize*ones(size(xPosition2Initial)), layer1floatSize*layer1floatSize*ones(size(xPosition1Initial))];
 
-figure('Position', [50 50 1080 1080])
-set(gcf,'PaperPositionMode','auto')
-set(gcf, 'Color', 'w');
+fig = figure('Position', [50 50 1080 1080]);
+fig.PaperPositionMode = 'auto';
+fig.Color = 'w';
 
-for timeIndex=1:length(t)
-    %for timeIndex = 20:20;
+for timeIndex=1:2:length(t)
+%    for timeIndex = 1:1;
 
 %     subplot(1,2,1)
     
@@ -80,7 +83,7 @@ for timeIndex=1:length(t)
     
 	% label everything
 	title( sprintf('Floats advected by a Quasigeostrophic eddy with wind'), 'fontsize', 28, 'FontName', 'Helvetica' );
-    text( 2e5, -4.7e5,  sprintf('Day %d @ %2d:00',round(t(timeIndex)/86400), round(mod(t(timeIndex),86400)/3600)), 'fontsize', 28, 'FontName', 'Helvetica', 'BackgroundColor', 'white' )
+    text( 2e5, -4.7e5,  sprintf('Day %d @ %2d:00',floor(t(timeIndex)/86400), round(mod(t(timeIndex),86400)/3600)), 'fontsize', 28, 'FontName', 'Helvetica', 'BackgroundColor', 'white' )
 %     subplot(1,2,2)
 %     
 %     colormap default
@@ -110,10 +113,12 @@ for timeIndex=1:length(t)
 %     caxis([-5 5])
 % 
 %     view(28,14)
-
+    
+   d = fig.PaperPosition;
+   fig.PaperSize = [d(3) d(4)];
+        
 	% write everything out	
 	output = sprintf('%s/Hour_%05d', FramesFolder,timeIndex-1);
-    hgexport(gcf,'filename',epsfig,'Format','eps')
-	print('-dpdf', output)
+	print(fig, '-dpsc2', output)
 
 end

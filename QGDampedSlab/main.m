@@ -283,7 +283,7 @@ int main (int argc, const char * argv[])
 		[netcdfFile setGlobalAttribute: @(dRho2) forKey:@"dRho2"];
         
         integrator.shouldDisplayProgress = YES;
-		[integrator integrateAlongDimension: tDimND toFile: netcdfFile withTimeScale: qg.T_QG variables: ^(GLScalar *t, NSArray *y) {
+		[integrator integrateAlongDimension: tDimND withTimeScale: qg.T_QG file: netcdfFile output: ^(GLScalar *t, NSArray *y) {
 			//NSLog(@"Logging day: %f, step size: %f.", (qg.T_QG*rkint.currentTime/86400), rkint.lastStepSize*qg.T_QG);
 			
 			NSMutableDictionary *scaledVariables = [NSMutableDictionary dictionary];
