@@ -2,7 +2,6 @@ addpath('/Volumes/Music/Dropbox/Documents/Matlab/jlab')
 addpath('/Users/jearly/Dropbox/Documents/Matlab/jlab')
 addpath('../GLOceanKit/Matlab/')
 
-
 load('/Users/jearly/Dropbox/Shared/Lilly-Sykulski-Early/MonopoleExperiment/QGDampedSlabTrajectories_Monopole.mat');
 
 numDrifters = size(xpos1,2);
@@ -12,11 +11,28 @@ dt = t(2)-t(1);
 cv1 = (diff(xpos1,1,1) + sqrt(-1)*diff(ypos1,1,1))/dt;
 cv2 = (diff(xpos2,1,1) + sqrt(-1)*diff(ypos2,1,1))/dt;
 
-[psi,lambda]=sleptap(size(cv1,1),3);
-[omega,spp,snn,spn]=mspec(dt,cv1,psi);
+% find a drifter with a large shift
+[val, idx]=min(rv1(1,:));
+timeRange = find(days<125);
+
+cv = cv1(timeRange,idx);
+
+[psi,lambda]=sleptap(size(cv,1),3);
+[omega,spp,snn,spn]=mspec(dt,cv,psi);
 
 % convert from radians/second to cycles/day
 f=omega*86400/(2*pi);
+
+f0 = corfreq(24)/3600;
+zeta = rv1(:,idx);
+sigma2 = strain_n1(:,idx).^2 + strain_s1(:,idx).^2;
+omega_shift = sqrt( (f0 + zeta/2).^2 - sigma2/4 );
+
+figure
+plot(days, omega_shift/f0)
+
+figure
+plot(days, omega_shift*86400/(2*pi))
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -45,7 +61,7 @@ file = 'winds.nc';
 u_wind = ncread(file, 'u');
 v_wind = ncread(file, 'v');
 time_wind = ncread(file, 't');
-index_range = find(time_wind<max(t));
+index_range = find(time_wind<t(length(cv)));
 u_wind = u_wind(index_range);
 v_wind = v_wind(index_range);
 time_wind = time_wind(index_range);
