@@ -1,8 +1,11 @@
 addpath('/Volumes/Music/Dropbox/Documents/Matlab/jlab')
-addpath('/Users/jearly/Dropbox/Documents/Matlab/jlab')
+%addpath('/Users/jearly/Dropbox/Documents/Matlab/jlab')
 addpath('../GLOceanKit/Matlab/')
 
-load('/Users/jearly/Dropbox/Shared/Lilly-Sykulski-Early/MonopoleExperiment/QGDampedSlabTrajectories_Monopole.mat');
+%load('/Users/jearly/Dropbox/Shared/Lilly-Sykulski-Early/MonopoleExperiment/QGDampedSlabTrajectories_Monopole.mat');
+load('/Volumes/Music/Dropbox/Shared/Lilly-Sykulski-Early/MonopoleExperiment/QGDampedSlabTrajectories_Monopole.mat');
+
+
 
 numDrifters = size(xpos1,2);
 days = t/86400;
@@ -13,6 +16,7 @@ cv2 = (diff(xpos2,1,1) + sqrt(-1)*diff(ypos2,1,1))/dt;
 
 % find a drifter with a large shift
 [val, idx]=min(rv1(1,:));
+idx = 136;
 timeRange = find(days<125);
 
 cv = cv1(timeRange,idx);
@@ -34,6 +38,14 @@ plot(days, omega_shift/f0)
 figure
 plot(days, omega_shift*86400/(2*pi))
 
+% file = '/Volumes/Music/Model_Output/MonopoleExperiment/QGDampedSlab_Monopole.nc';
+% u1 = squeeze(ncread(file, 'u-1', [135 128 1], [1 1 max(timeRange)], [1 1 1]));
+% v1 = squeeze(ncread(file, 'v-1', [135 128 1], [1 1 max(timeRange)], [1 1 1]));
+% cv_mooring = u1 + sqrt(-1)*v1;
+% [omega_mooring,spp_mooring,snn_mooring,spn_mooring]=mspec(dt,cv_mooring,psi);
+% 
+% eta2 = squeeze(ncread(file, 'eta-2', [1 1 1], [Inf Inf 1], [1 1 1]));
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % Spectrum
@@ -51,9 +63,11 @@ spp(1,:)=2*spp(1,:);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-plot(f,spp),ylog
+plot(f,spp,'b'),ylog
 hold on
-plot(-f,snn)
+plot(-f,snn,'b')
+plot(f,spp_mooring,'g')
+plot(-f,snn_mooring,'g')
 
 
 % Read the winds

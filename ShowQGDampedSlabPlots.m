@@ -1,7 +1,7 @@
 day = 300;
 
 %file = '/Users/jearly/Desktop/QGDampedSlab.nc';
-file = '/Volumes/Music/Model_Output/QGDampedSlab_Monopole.nc';
+file = '/Volumes/Music/Model_Output/MonopoleExperiment/QGDampedSlab_Monopole.nc';
 %output = '/Volumes/Music/Model_Output/QGDampedSlabTrajectories_Monopole.mat';
 t = ncread(file, 'time');
 x = ncread(file, 'x');
