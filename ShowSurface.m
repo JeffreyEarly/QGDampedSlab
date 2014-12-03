@@ -4,6 +4,9 @@ FramesFolder ='/Volumes/Data/QGPlusSlab/MonopoleExperiment/FloatFrames';
 file = '/Volumes/Music/Model_Output/MonopoleExperiment/QGDampedSlab_Monopole.nc';
 FramesFolder ='/Volumes/Music/Model_Output/MonopoleExperiment/FloatFrames';
 
+file = '/Volumes/RadiativeTransfer/QGDampedSlab/MonopoleExperiment/QGDampedSlab_Monopole.nc';
+FramesFolder ='/Volumes/RadiativeTransfer/QGDampedSlab/MonopoleExperiment/SurfaceVorticityFrames';
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % 	Make the frames folder
@@ -38,8 +41,8 @@ fig = figure('Position', [50 50 1080 1080]);
 fig.PaperPositionMode = 'auto';
 fig.Color = 'w';
 
-for timeIndex=1:2:length(t)
-%    for timeIndex = 1:1;
+%for timeIndex=1:2:length(t)
+    for timeIndex = 1:1;
 
 %     subplot(1,2,1)
     

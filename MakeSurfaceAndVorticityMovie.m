@@ -20,6 +20,8 @@ end
 t = ncread(file, 'time');
 x = ncread(file, 'x');
 y = ncread(file, 'y');
+tau_x = ncread(file,'tau_x');
+tau_y = ncread(file,'tau_y');
 xFloat = ncread(file, 'x-float');
 yFloat = ncread(file, 'y-float');
 latitude = ncreadatt(file, '/', 'latitude');
@@ -29,8 +31,13 @@ g1 = 9.81*dRho1;
 g2 = 9.81*dRho2;
 f0 = 2 * 7.2921E-5 * sin( latitude*pi/180. );
 stride = 1;
-layer1floatSize = 10;
-layer2floatSize = 15;
+layer1floatSize = 8;
+layer2floatSize = 13;
+
+% Set a maximum for the compass
+max_tau = 0.5*max(sqrt(tau_x.*tau_x + tau_y.*tau_y));
+x_fake=[0 max_tau 0 -max_tau];
+y_fake=[max_tau 0 -max_tau 0];
 
 xlength = max(x)-min(x) + x(2)-x(1);
 ylength = max(y)-min(y) + y(2)-y(1);
@@ -80,8 +87,8 @@ fig = figure('Position', [50 50 1080 1080]);
 fig.PaperPositionMode = 'auto';
 fig.Color = 'w';
 
-%for timeIndex=1:2:length(t)
-    for timeIndex = 6001:6001;
+%for timeIndex=1:3:length(t)
+    for timeIndex = 5555:5555;
 
     mainPlot = subplot(1,10,1:8);
     
@@ -143,8 +150,19 @@ fig.Color = 'w';
 	ylim([min(y) max(y)])
     
 	% label everything
-	title( sprintf('Floats advected by a Quasigeostrophic eddy with wind'), 'fontsize', 28, 'FontName', 'Helvetica' );
+	title( sprintf('Floats advected by a Quasigeostrophic eddy with wind'), 'fontsize', 24, 'FontName', 'Helvetica' );
     text( 1e5, -4.7e5,  sprintf('Day %d @ %2d:00',floor(t(timeIndex)/86400), round(mod(t(timeIndex),86400)/3600)), 'fontsize', 28, 'FontName', 'Helvetica', 'BackgroundColor', 'white' )
+    
+    compassPlot = axes('parent',fig,'position',[0.10 0.67 0.25 0.25]);
+    compass(x_fake,y_fake);
+    compassPlot.Children(1).Visible = 'off';
+    compassPlot.Children(2).Visible = 'off';
+    compassPlot.Children(3).Visible = 'off';
+    compassPlot.Children(4).Visible = 'off';
+    hold on;
+    compassPlot2=compass(tau_x(timeIndex),tau_y(timeIndex));
+    compassPlot.Children(1).LineWidth = 2;
+    delete(findall(compassPlot,'type','text'))
     
     cb1Plot = subplot(1,10,9);
     ycb = linspace(minRV2, maxRV2, 128)';
@@ -157,6 +175,7 @@ fig.Color = 'w';
     for iIndex=1:length(cb1Plot.YTick)
         cb1Plot.YTickLabel{iIndex}=sprintf('%.2f f_0',cb1Plot.YTick(iIndex));
     end
+    cb1Plot.YAxisLocation = 'right';
     
     cb2Plot = subplot(1,10,10);
     ycb = linspace(rv1offset + minRV1, rv1offset + maxRV1, 128)';
@@ -171,8 +190,8 @@ fig.Color = 'w';
 %         cb2Plot.YTickLabel{iIndex}=sprintf('%.2f f_0',cb2Plot.YTick(iIndex)-rv1offset);
 %     end
     
-    d = fig.PaperPosition;
-    fig.PaperSize = [d(3) d(4)];
+%     d = fig.PaperPosition;
+%     fig.PaperSize = [d(3) d(4)];
 
 %     ti = mainPlot.TightInset;
 %     mainPlot.Position=[-.12 ti(2) 1-ti(3)-ti(1) 1-ti(4)-ti(2)];
@@ -183,6 +202,7 @@ fig.Color = 'w';
 	% write everything out	
 	output = sprintf('%s/Hour_%05d', FramesFolder,timeIndex-1);
 	%print(fig, '-dpsc2', output)
-    print(fig, '-dpng', '-r150', output)
+    %print(fig, '-dpng', '-r150', output)
+    export_fig(output,'-r300')
 
 end
