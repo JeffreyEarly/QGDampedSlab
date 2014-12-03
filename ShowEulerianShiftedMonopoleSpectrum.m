@@ -26,8 +26,9 @@ dt = t(2)-t(1);
 timeIndex = 1;
 
 timeRange = find(t>=250*86400 & t<300*86400);
+timeRange = find(t>=150*86400 & t<200*86400);
 %xidx = [10, 50, 110, 115, 120, 125, 128];
-xidx = [25, 110, 125, 130];
+xidx = [25, 115, 130];
 yidx = 128*ones(size(xidx));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -38,7 +39,7 @@ psi2 = -(g2/f0)*squeeze(ncread(file, 'eta-2', [1 1 min(timeRange)], [Inf Inf 1],
 [strain_s_eul2, strain_n_eul2, rv_eul2, k, l] = FieldsFromStreamFunction( latitude, x, y, psi2, 'strain_s', 'strain_n', 'rv', 'k', 'l');
 
 u1 = squeeze(ncread(file, 'u-1', [1 1 min(timeRange)], [Inf Inf 1], [1 1 1]));
-v1 = squeeze(ncread(file, 'u-1', [1 1 min(timeRange)], [Inf Inf 1], [1 1 1]));
+v1 = squeeze(ncread(file, 'v-1', [1 1 min(timeRange)], [Inf Inf 1], [1 1 1]));
 
 u1FD = fft2(u1);
 v1FD = fft2(v1);
@@ -74,7 +75,7 @@ cb = colorbar('eastoutside');
 
 hold on
 for iIndex=1:length(xidx)
-    scatter(x(xidx(iIndex)),y(yidx(iIndex)),7*7,rvPlot.ColorOrder(mod(iIndex,7)+1,:),'filled')
+    scatter(x(xidx(iIndex)),y(yidx(iIndex)),7*7,rvPlot.ColorOrder(mod(iIndex-1,7)+1,:),'filled')
 end
 
 %%%%%%%%%%%%%%%%%%%%%
@@ -96,7 +97,7 @@ cb = colorbar('eastoutside');
 
 hold on
 for iIndex=1:length(xidx)
-    scatter(x(xidx(iIndex)),y(yidx(iIndex)),7*7,rvPlot.ColorOrder(mod(iIndex,7)+1,:),'filled')
+    scatter(x(xidx(iIndex)),y(yidx(iIndex)),7*7,rvPlot.ColorOrder(mod(iIndex-1,7)+1,:),'filled')
 end
 
 %%%%%%%%%%%%%%%%%%%%%
@@ -125,10 +126,14 @@ spp_mooring(1,:)=2*spp_mooring(1,:);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-subplot(3,1,3);
-plot(f,spp_mooring),ylog
-hold on
-plot(-f,snn_mooring)
+f_total = [-flip(f,1); f(2:end)];
+s_total = cat(1, flip(snn_mooring,1), spp_mooring(2:end,:));
+
+spectraPlot = subplot(3,1,3);
+plot(f_total,s_total), ylog
+
+% maxColors = mod(iIndex-1,length(xidx))+1;
+% spectraPlot.ColorOrder = rvPlot.ColorOrder(1:maxColors,:);
 
 vlines(-f0*86400/(2*pi))
 
