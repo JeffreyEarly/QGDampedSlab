@@ -1,13 +1,18 @@
 addpath('../GLOceanKit/Matlab/')
 
-file = '/Volumes/Data/QGPlusSlab/MonopoleExperiment/QGDampedSlab_Monopole.nc';
-FramesFolder ='/Volumes/Data/QGPlusSlab/MonopoleExperiment/SurfaceVorticityFrames';
+shouldZoomIn = 1;
 
-file = '/Volumes/Music/Model_Output/MonopoleExperiment/QGDampedSlab_Monopole.nc';
-FramesFolder ='/Volumes/Music/Model_Output/MonopoleExperiment/SurfaceVorticityFrames';
+MonopoleExperimentDirectory = '/Volumes/Data/QGPlusSlab/MonopoleExperiment';
+MonopoleExperimentDirectory = '/Volumes/Music/Model_Output/MonopoleExperiment';
+MonopoleExperimentDirectory = '/Volumes/RadiativeTransfer/QGDampedSlab/MonopoleExperiment';
 
-file = '/Volumes/RadiativeTransfer/QGDampedSlab/MonopoleExperiment/QGDampedSlab_Monopole.nc';
-FramesFolder ='/Volumes/RadiativeTransfer/QGDampedSlab/MonopoleExperiment/SurfaceVorticityFrames';
+file = sprintf('%s/QGDampedSlab_Monopole.nc',MonopoleExperimentDirectory);
+
+if shouldZoomIn == 1
+    FramesFolder = sprintf('%s/SurfaceVorticityFramesZoomedIn', MonopoleExperimentDirectory);
+else
+    FramesFolder = sprintf('%s/SurfaceVorticityFrames', MonopoleExperimentDirectory);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -31,9 +36,13 @@ g1 = 9.81*dRho1;
 g2 = 9.81*dRho2;
 f0 = 2 * 7.2921E-5 * sin( latitude*pi/180. );
 stride = 1;
-layer1floatSize = 8;
-layer2floatSize = 13;
-
+if shouldZoomIn == 1
+    layer1floatSize = 14;
+    layer2floatSize = 20;
+else
+    layer1floatSize = 8;
+    layer2floatSize = 13;
+end
 % Set a maximum for the compass
 max_tau = 0.5*max(sqrt(tau_x.*tau_x + tau_y.*tau_y));
 x_fake=[0 max_tau 0 -max_tau];
@@ -66,7 +75,7 @@ minRV1 = min(min(rv_eul1));
 
 % Set them to the same scale? I prefer they be slightly saturated, rather
 % than span the color space.
-minRV2 = min(minRV2,minRV1);
+minRV2 = 1.4*min(minRV2,minRV1);
 minRV1 = minRV2;
 maxRV2 = max(maxRV2,maxRV1);
 maxRV1 = maxRV2;
@@ -83,12 +92,12 @@ layer1map = parula(128);
 combomap = [layer2map;layer1map];
 floatSize = [ layer2floatSize*layer2floatSize*ones(size(xPosition2Initial)), layer1floatSize*layer1floatSize*ones(size(xPosition1Initial))];
 
-fig = figure('Position', [50 50 1080 1080]);
+fig = figure('Position', [50 50 1080 804]);
 fig.PaperPositionMode = 'auto';
 fig.Color = 'w';
 
-%for timeIndex=1:3:length(t)
-    for timeIndex = 5555:5555;
+for timeIndex=1:3:length(t)
+%    for timeIndex = 5000:5000;
 
     mainPlot = subplot(1,10,1:8);
     
@@ -146,13 +155,22 @@ fig.Color = 'w';
 %     set( gca, 'ylabel', [])
     axis off
     
-	xlim([min(x) max(x)])
-	ylim([min(y) max(y)])
+    if shouldZoomIn == 1
+        xlim([-200e3 200e3])
+    	ylim([-200e3 200e3])
+    else
+        xlim([min(x) max(x)])
+        ylim([min(y) max(y)])
+    end
+
     
 	% label everything
 	title( sprintf('Floats advected by a Quasigeostrophic eddy with wind'), 'fontsize', 24, 'FontName', 'Helvetica' );
-    text( 1e5, -4.7e5,  sprintf('Day %d @ %2d:00',floor(t(timeIndex)/86400), round(mod(t(timeIndex),86400)/3600)), 'fontsize', 28, 'FontName', 'Helvetica', 'BackgroundColor', 'white' )
-    
+    if shouldZoomIn == 1
+        text( 50e3, -180e3,  sprintf('Day %d @ %2d:00',floor(t(timeIndex)/86400), round(mod(t(timeIndex),86400)/3600)), 'fontsize', 28, 'FontName', 'Helvetica', 'BackgroundColor', 'white' )
+    else
+        text( 1e5, -4.7e5,  sprintf('Day %d @ %2d:00',floor(t(timeIndex)/86400), round(mod(t(timeIndex),86400)/3600)), 'fontsize', 28, 'FontName', 'Helvetica', 'BackgroundColor', 'white' )
+    end
     compassPlot = axes('parent',fig,'position',[0.10 0.67 0.25 0.25]);
     compass(x_fake,y_fake);
     compassPlot.Children(1).Visible = 'off';
@@ -203,6 +221,6 @@ fig.Color = 'w';
 	output = sprintf('%s/Hour_%05d', FramesFolder,timeIndex-1);
 	%print(fig, '-dpsc2', output)
     %print(fig, '-dpng', '-r150', output)
-    export_fig(output,'-r300')
+    %export_fig(output,'-r300')
 
 end
