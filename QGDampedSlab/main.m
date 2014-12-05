@@ -15,6 +15,11 @@ typedef NS_ENUM(NSUInteger, ExperimentType) {
     kMonopoleExperimentType = 1
 };
 
+typedef NS_ENUM(NSUInteger, WindsType) {
+	kPapaWinds = 0,
+	kNoWinds = 1
+};
+
 int main (int argc, const char * argv[])
 {
 	
@@ -23,20 +28,21 @@ int main (int argc, const char * argv[])
 		GLFloat H1 = 50;
 		GLFloat H2 = 800;
 		GLFloat dRho1 = 1E-3;
-		GLFloat dRho2 = 1E-3;
+		GLFloat dRho2 = 1E-4;
 		GLFloat latitude = 24;
         ExperimentType experiment = kMonopoleExperimentType;
+		WindsType winds = kNoWinds;
 		
         GLFloat domainWidth = 1000e3; // m
         NSUInteger nPoints = 256;
         NSUInteger aspectRatio = 1;
         NSUInteger floatFraction = 4;
         
-		GLFloat maxTime = 300*86400;
+		GLFloat maxTime = 25*86400;
         GLFloat outputInterval = 86400/24;
 		//GLFloat dampingOrder=2; // order of the damping operator. Order 1 is harmonic, order 2 is biharmonic, etc.
 		//GLFloat dampingTime=3600; // e-folding time scale of the Nyquist frequency.
-		GLFloat linearDampingTime = 4*86400;
+		GLFloat linearDampingTime = 10*86400;
 		
 		// Standard constants
 		GLFloat f0 = 2 * 7.2921E-5 * sin( latitude*M_PI/180. );
@@ -165,27 +171,39 @@ int main (int argc, const char * argv[])
         [uI_0 zero];
         [vI_0 zero];
 		
+		uI_0 = [uI_0 setValue: 1.0 atIndices: @":,:"];
+		
         /************************************************************************************************/
         /*		Read the winds from file																*/
         /************************************************************************************************/
-        
-        // If all goes well, the variable t will be identified as the coordinated variable and therefore turned into a dimension, leaving only u and v.
-        GLNetCDFFile *winds = [[GLNetCDFFile alloc] initWithURL: [NSURL URLWithString: @"/Users/jearly/Documents/Models/QGDampedSlab/winds.nc"] forEquation: equation];
-        GLFunction *u_wind = winds.variables[0];
-        GLFunction *v_wind = winds.variables[1];
 		
-        GLFloat rho_air = 1.25;
-        GLFunction *speed_wind = [[[u_wind times: u_wind] plus: [v_wind times: v_wind]] sqrt];
-        GLFunction *dragCoefficient = [[[speed_wind scalarMultiply: 0.071] scalarAdd: 0.50] scalarMultiply: 1e-3];
-        GLFunction *tau_x = [[[u_wind times: speed_wind] times: dragCoefficient] scalarMultiply: rho_air];
-        GLFunction *tau_y = [[[v_wind times: speed_wind] times: dragCoefficient] scalarMultiply: rho_air];
-        
-        GLFloat tau_scale = 1./( rho_water*H1*beta*beta*L_2*L_2*L_2); // Nondimensionalization factor
-        tau_x = [tau_x scaleVariableBy: tau_scale withUnits: @"unitless" dimensionsBy:1/qg.T_QG units: @"unitless"];
-        tau_y = [tau_y scaleVariableBy: tau_scale withUnits: @"unitless" dimensionsBy:1/qg.T_QG units: @"unitless"];
-        
-        [tau_x solve];
-        [tau_y solve];
+		GLFunction *tau_x;
+		GLFunction *tau_y;
+		GLFloat tau_scale = 1./( rho_water*H1*beta*beta*L_2*L_2*L_2); // Nondimensionalization factor
+		
+		if (winds == kPapaWinds) {
+			// If all goes well, the variable t will be identified as the coordinated variable and therefore turned into a dimension, leaving only u and v.
+			GLNetCDFFile *windsFile = [[GLNetCDFFile alloc] initWithURL: [NSURL URLWithString: @"/Users/jearly/Documents/Models/QGDampedSlab/winds.nc"] forEquation: equation];
+			GLFunction *u_wind = windsFile.variables[0];
+			GLFunction *v_wind = windsFile.variables[1];
+			
+			GLFloat rho_air = 1.25;
+			GLFunction *speed_wind = [[[u_wind times: u_wind] plus: [v_wind times: v_wind]] sqrt];
+			GLFunction *dragCoefficient = [[[speed_wind scalarMultiply: 0.071] scalarAdd: 0.50] scalarMultiply: 1e-3];
+			tau_x = [[[u_wind times: speed_wind] times: dragCoefficient] scalarMultiply: rho_air];
+			tau_y = [[[v_wind times: speed_wind] times: dragCoefficient] scalarMultiply: rho_air];
+
+			tau_x = [tau_x scaleVariableBy: tau_scale withUnits: @"unitless" dimensionsBy:1/qg.T_QG units: @"unitless"];
+			tau_y = [tau_y scaleVariableBy: tau_scale withUnits: @"unitless" dimensionsBy:1/qg.T_QG units: @"unitless"];
+			
+			[tau_x solve];
+			[tau_y solve];
+		} else if (winds == kNoWinds) {
+			tau_x = [GLFunction functionOfRealTypeWithDimensions: @[tDim] forEquation: equation];
+			tau_y = [GLFunction functionOfRealTypeWithDimensions: @[tDim] forEquation: equation];
+			[tau_x zero];
+			[tau_y zero];
+		}
 		
 		/************************************************************************************************/
 		/*		Plop down floats                                                                        */
@@ -273,7 +291,7 @@ int main (int argc, const char * argv[])
 		/************************************************************************************************/
 		
 		//GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent:@"QGDampedSlab.nc"] forEquation: equation overwriteExisting: YES];
-		GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [NSURL fileURLWithPath: @"/Volumes/Music/Model_Output/QGDampedSlab_Monopole.nc"] forEquation: equation overwriteExisting: YES];
+		GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [NSURL fileURLWithPath: @"/Volumes/Data/QGPlusSlab/MonopoleExperimentWithNoWindsLongDampNonStiff_+/QGDampedSlab_Monopole.nc"] forEquation: equation overwriteExisting: YES];
 		GLDimension *tDimND = [tDim scaledBy: 1./qg.T_QG translatedBy: 0.0 withUnits: @""];
 		
 		[qg addMetadataToNetCDFFile: netcdfFile];
