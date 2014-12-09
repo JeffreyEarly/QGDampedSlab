@@ -2,7 +2,7 @@ addpath('../GLOceanKit/Matlab/')
 
 addpath('/Users/jearly/Dropbox/Documents/Matlab/jlab')
 %load('/Volumes/Data/QGPlusSlab/MonopoleExperimentWithNoWindsLongDamp_+/QGDampedSlabTrajectories_Monopole.mat');
-file = '/Volumes/Data/QGPlusSlab/MonopoleExperimentWithNoWindsLongDampNonStiff_+/QGDampedSlab_Monopole.nc';
+file = '/Volumes/Data/QGPlusSlab/MonopoleExperimentWithWithWindsLongDampNonStiff_-/QGDampedSlab_Monopole.nc';
 
 %addpath('/Volumes/Music/Dropbox/Documents/Matlab/jlab')
 %load('/Volumes/Music/Dropbox/Shared/Lilly-Sykulski-Early/MonopoleExperiment/QGDampedSlabTrajectories_Monopole.mat');
@@ -26,7 +26,7 @@ dt = t(2)-t(1);
 timeIndex = 1;
 
 timeRange = find(t>=250*86400 & t<300*86400);
-timeRange = find(t>=0*86400 & t<25*86400);
+timeRange = find(t>=0*86400 & t<50*86400);
 %xidx = [10, 50, 110, 115, 120, 125, 128];
 xidx = [25, 115, 130];
 yidx = 128*ones(size(xidx));

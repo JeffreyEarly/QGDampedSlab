@@ -27,18 +27,18 @@ int main (int argc, const char * argv[])
 		
 		GLFloat H1 = 50;
 		GLFloat H2 = 800;
-		GLFloat dRho1 = 1E-3;
-		GLFloat dRho2 = 1E-4;
+		GLFloat dRho1 = 1E-4;
+		GLFloat dRho2 = 1E-3;
 		GLFloat latitude = 24;
         ExperimentType experiment = kMonopoleExperimentType;
-		WindsType winds = kNoWinds;
+		WindsType winds = kPapaWinds;
 		
         GLFloat domainWidth = 1000e3; // m
         NSUInteger nPoints = 256;
         NSUInteger aspectRatio = 1;
         NSUInteger floatFraction = 4;
         
-		GLFloat maxTime = 25*86400;
+		GLFloat maxTime = 50*86400;
         GLFloat outputInterval = 86400/24;
 		//GLFloat dampingOrder=2; // order of the damping operator. Order 1 is harmonic, order 2 is biharmonic, etc.
 		//GLFloat dampingTime=3600; // e-folding time scale of the Nyquist frequency.
@@ -49,13 +49,14 @@ int main (int argc, const char * argv[])
 		GLFloat g = 9.81;
 		GLFloat R = 6.371e6;
 		GLFloat beta = 2 * 7.2921E-5 * cos( latitude*M_PI/180. ) / R;
-		GLFloat gprime = dRho1 * g;
+		GLFloat gprime_1 = dRho1 * g;
+		GLFloat gprime_2 = dRho2 * g;
 		GLFloat rho_water = 1025;
         GLFloat h2 = dRho2*H2;
-		GLFloat L_1 = sqrt( gprime * H1) / f0;
-		GLFloat L_2 = sqrt( gprime * H2) / f0;
+		GLFloat L_1 = sqrt( gprime_1 * H1) / f0;
+		GLFloat L_2 = sqrt( gprime_2 * H2) / f0;
         GLFloat U_scale = beta*L_2*L_2;
-        GLFloat N_scale = H2*beta*L_2*L_2/sqrt(gprime*H2);
+        GLFloat N_scale = H2*beta*L_2*L_2/sqrt(gprime_2*H2);
 		
         
         GLDimension *xDim = [[GLDimension alloc] initDimensionWithGrid: kGLPeriodicGrid nPoints:nPoints domainMin:-domainWidth/2.0 length:domainWidth];
@@ -149,7 +150,7 @@ int main (int argc, const char * argv[])
             GLFunction *y = [GLFunction functionOfRealTypeFromDimension: qg.dimensions[1] withDimensions: qg.dimensions forEquation: equation];
             
             // We're going to plop down a gaussian = amplitude * exp( - ((x-x0)*(x-x0) + (y-y0)*(y-y0))/(length*length) );
-            GLFloat amplitude = 15.0e-2/qg.N_QG;
+            GLFloat amplitude = -15.0e-2/qg.N_QG;
             GLFloat length = 80e3/qg.L_QG;
             
             GLFunction *r2 = [[x times: x] plus: [y times: y]];
@@ -171,7 +172,7 @@ int main (int argc, const char * argv[])
         [uI_0 zero];
         [vI_0 zero];
 		
-		uI_0 = [uI_0 setValue: 1.0 atIndices: @":,:"];
+		//uI_0 = [uI_0 setValue: 1.0 atIndices: @":,:"];
 		
         /************************************************************************************************/
         /*		Read the winds from file																*/
@@ -238,6 +239,7 @@ int main (int argc, const char * argv[])
 		
 		
         GLFloat u_scale = f0/(beta*L_2);
+		GLFloat pressure_scale = (gprime_1/gprime_2) * u_scale;
         
         GLFloat div_scale = u_scale*(L_1*L_1)/(L_2*L_2);
         GLFunction *eta1_0_FD = [eta1_0 transformToBasis: @[@(kGLExponentialBasis),@(kGLExponentialBasis)]];
@@ -262,8 +264,8 @@ int main (int argc, const char * argv[])
             // Should I be damping uI? Or u1?
 			// f_u = v + tx + eta_x + damp_u
 			// f_v = -u + ty + eta_y + damp_v
-			GLFunction *f_uI = [[[vI times:  @(u_scale)] plus: [tx minus: [uI times: @(qg.T_QG/linearDampingTime)]]] plus: [[[eta1 x] times: @(u_scale)] spatialDomain]];
-            GLFunction *f_vI = [[[[uI negate] times:  @(u_scale)] plus: [ty minus: [vI times: @(qg.T_QG/linearDampingTime)]]] plus: [[[eta1 y] times: @(u_scale)] spatialDomain]];
+			GLFunction *f_uI = [[[vI times:  @(u_scale)] plus: [tx minus: [uI times: @(qg.T_QG/linearDampingTime)]]] plus: [[[eta1 x] times: @(pressure_scale)] spatialDomain]];
+            GLFunction *f_vI = [[[[uI negate] times:  @(u_scale)] plus: [ty minus: [vI times: @(qg.T_QG/linearDampingTime)]]] plus: [[[eta1 y] times: @(pressure_scale)] spatialDomain]];
             GLFunction *f_eta1 = [[[uI x] plus: [vI y]] times: @(div_scale)];
             
             // These are actually *negative* u2_x, etc.
@@ -291,7 +293,7 @@ int main (int argc, const char * argv[])
 		/************************************************************************************************/
 		
 		//GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent:@"QGDampedSlab.nc"] forEquation: equation overwriteExisting: YES];
-		GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [NSURL fileURLWithPath: @"/Volumes/Data/QGPlusSlab/MonopoleExperimentWithNoWindsLongDampNonStiff_+/QGDampedSlab_Monopole.nc"] forEquation: equation overwriteExisting: YES];
+		GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [NSURL fileURLWithPath: @"/Volumes/Data/QGPlusSlab/MonopoleExperimentWithWithWindsLongDampNonStiff_-/QGDampedSlab_Monopole.nc"] forEquation: equation overwriteExisting: YES];
 		GLDimension *tDimND = [tDim scaledBy: 1./qg.T_QG translatedBy: 0.0 withUnits: @""];
 		
 		[qg addMetadataToNetCDFFile: netcdfFile];
