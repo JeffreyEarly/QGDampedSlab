@@ -221,6 +221,6 @@ for timeIndex=1:3:length(t)
 	output = sprintf('%s/Hour_%05d', FramesFolder,timeIndex-1);
 	%print(fig, '-dpsc2', output)
     %print(fig, '-dpng', '-r150', output)
-    %export_fig(output,'-r300')
+    export_fig(output,'-r300')
 
 end
