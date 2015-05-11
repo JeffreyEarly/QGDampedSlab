@@ -30,7 +30,7 @@ int main (int argc, const char * argv[])
 		GLFloat dRho1 = 1E-4;
 		GLFloat dRho2 = 1E-3;
 		GLFloat latitude = 24;
-        ExperimentType experiment = kMonopoleExperimentType;
+        ExperimentType experiment = kTurbulentExperimentType;
 		WindsType winds = kPapaWinds;
 		
         GLFloat domainWidth = 1000e3; // m
@@ -293,7 +293,7 @@ int main (int argc, const char * argv[])
 		/************************************************************************************************/
 		
 		//GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent:@"QGDampedSlab.nc"] forEquation: equation overwriteExisting: YES];
-		GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [NSURL fileURLWithPath: @"/Volumes/Data/QGPlusSlab/MonopoleExperimentWithWithWindsLongDampNonStiff_-/QGDampedSlab_Monopole.nc"] forEquation: equation overwriteExisting: YES];
+		GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [NSURL fileURLWithPath: @"/Volumes/Data/QGPlusSlab/TurbulenceExperimentLongDampNonStiff/QGDampedSlab.nc"] forEquation: equation overwriteExisting: YES];
 		GLDimension *tDimND = [tDim scaledBy: 1./qg.T_QG translatedBy: 0.0 withUnits: @""];
 		
 		[qg addMetadataToNetCDFFile: netcdfFile];
