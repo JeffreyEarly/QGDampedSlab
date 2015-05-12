@@ -38,11 +38,11 @@ int main (int argc, const char * argv[])
         NSUInteger aspectRatio = 1;
         NSUInteger floatFraction = 4;
         
-		GLFloat maxTime = 50*86400;
+		GLFloat maxTime = 300*86400;
         GLFloat outputInterval = 86400/24;
 		//GLFloat dampingOrder=2; // order of the damping operator. Order 1 is harmonic, order 2 is biharmonic, etc.
 		//GLFloat dampingTime=3600; // e-folding time scale of the Nyquist frequency.
-		GLFloat linearDampingTime = 10*86400;
+		GLFloat linearDampingTime = 5*86400;
 		
 		// Standard constants
 		GLFloat f0 = 2 * 7.2921E-5 * sin( latitude*M_PI/180. );
@@ -74,7 +74,7 @@ int main (int argc, const char * argv[])
         Quasigeostrophy2D *qg;
         if (experiment == kTurbulentExperimentType)
         {
-            NSString *baseName = @"QGTurbulence_2";
+            NSString *baseName = @"QGTurbulence_3";
             NSURL *restartFile = [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent: [baseName stringByAppendingString: @".nc"]];
             NSFileManager *fileManager = [[NSFileManager alloc] init];
             
@@ -86,7 +86,7 @@ int main (int argc, const char * argv[])
                 qgSpinup.shouldUseSVV = YES;
                 qgSpinup.shouldAntiAlias = YES;
                 qgSpinup.shouldForce = YES;
-                qgSpinup.forcingFraction = 2;
+                qgSpinup.forcingFraction = 10;
                 qgSpinup.forcingWidth = 1;
                 qgSpinup.f_zeta = .2;
                 qgSpinup.forcingDecorrelationTime = HUGE_VAL;
@@ -293,7 +293,7 @@ int main (int argc, const char * argv[])
 		/************************************************************************************************/
 		
 		//GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent:@"QGDampedSlab.nc"] forEquation: equation overwriteExisting: YES];
-		GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [NSURL fileURLWithPath: @"/Volumes/Data/QGPlusSlab/TurbulenceExperimentLongDampNonStiff/QGDampedSlab.nc"] forEquation: equation overwriteExisting: YES];
+		GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [NSURL fileURLWithPath: @"/Volumes/Music/Model_Output/TurbulenceExperimentLongDampNonStiff/QGDampedSlab.nc"] forEquation: equation overwriteExisting: YES];
 		GLDimension *tDimND = [tDim scaledBy: 1./qg.T_QG translatedBy: 0.0 withUnits: @""];
 		
 		[qg addMetadataToNetCDFFile: netcdfFile];
