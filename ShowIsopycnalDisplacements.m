@@ -23,24 +23,29 @@ timeIndex = find( t_days-1 <= day, 1, 'last');
 eta1 = squeeze(ncread(file, 'eta-1', [1 1 timeIndex], [Inf Inf 1], [1 1 1]));
 eta2 = squeeze(ncread(file, 'eta-2', [1 1 timeIndex], [Inf Inf 1], [1 1 1]));
 
-eta1ColorLimitsMax = 0.8*[-max(max(abs(eta1))) max(max(abs(eta1)))];
+eta1ColorLimits = 0.8*[-max(max(abs(eta1))) max(max(abs(eta1)))];
 eta2ColorLimits = 0.8*[-max(max(abs(eta2))) max(max(abs(eta2)))];
 
 theFigure = figure('Position', [50 50 1000 470]);
 theFigure.PaperPositionMode = 'auto';
 theFigure.Color = 'white';
 
-for timeIndex=1:length(t_days)
+for timeIndex=1:48 %length(t_days)
 
     eta1 = squeeze(ncread(file, 'eta-1', [1 1 timeIndex], [Inf Inf 1], [1 1 1]));
     eta2 = squeeze(ncread(file, 'eta-2', [1 1 timeIndex], [Inf Inf 1], [1 1 1]));
     
-    if (timeIndex == 1)
-        eta1ColorLimits = [-1e-4 1e-4];
-    elseif (timeIndex < 48)
-        eta1ColorLimits = 0.8*[-max(max(abs(eta1))) max(max(abs(eta1)))];
+    if (max(max(abs(eta1))) < 0.003*eta1ColorLimits(2))
+        eta1 = 1000*eta1;
+        units = 'millimeters';
+    elseif (max(max(abs(eta1))) < 0.03*eta1ColorLimits(2))
+        eta1 = 100*eta1;
+        units = 'centimeters';
+    elseif (max(max(abs(eta1))) < 0.3*eta1ColorLimits(2))
+        eta1 = 10*eta1;
+        units = 'decimeters';
     else
-        eta1ColorLimits = eta1ColorLimitsMax;
+        units = 'meters';
     end
     
     %%%%%%%%%%%%%%%%%%%%%
@@ -62,7 +67,7 @@ for timeIndex=1:length(t_days)
     colormap(sshPlot,parula(1024))
 
     sshBar = colorbar('westoutside');
-    sshBar.Label.String = 'Displacement (meters)';
+    sshBar.Label.String = sprintf('Displacement (%s)',units);
     sshBar.Label.FontName = 'Helvetica';
     sshBar.Label.FontSize = 16;
 

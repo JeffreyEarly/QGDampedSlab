@@ -27,8 +27,34 @@ cv2 = (diff(xpos2,1,1) + sqrt(-1)*diff(ypos2,1,1))/dt;
 % convert from radians/second to cycles/day
 f=omega*86400/(2*pi);
 
+omega_floats = [ flip(-omega(2:end),1); omega];
 f_floats = [ flip(-f(2:end),1); f];
 S_floats = cat(1, flip(snn(2:end,:),1), spp);
+
+S_mean = mean(S_floats,2);
+S_std = std(S_floats,0,2);
+inertialRange = find(f_floats < -0.63 & f_floats > -1.0);
+inertial_speed = sqrt( (1/2/pi)*trapz(omega_floats(inertialRange),S_mean(inertialRange)));
+inertial_std1 = sqrt( (1/2/pi)*trapz(omega_floats(inertialRange),S_mean(inertialRange) + S_std(inertialRange)));
+inertial_std2 = sqrt( (1/2/pi)*trapz(omega_floats(inertialRange),S_mean(inertialRange) - S_std(inertialRange)));
+
+
+% a == b is true for a complex time series
+Z = cv1(:,1);
+[F,SPP,SNN]=mspec(dt,Z,[]);
+df = F(2)-F(1);
+a = (1/2/pi)*(sum(SPP)+sum(SNN(2:end-1)))*df;
+b = std(Z).^2 + mean(Z).*conj(mean(Z));
+
+% c == d is true, for some real time series X
+X = imag(Z);
+[F,S]=mspec(X,[]);
+S(1)=0.5*S(1);
+c = (1/2/pi)*sum(S,1)*(F(2)-F(1));
+d = std(X).^2 + mean(X).^2;
+g = mean(X.*X);
+
+return;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
