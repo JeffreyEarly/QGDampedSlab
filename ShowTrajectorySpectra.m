@@ -1,9 +1,18 @@
-addpath('/Volumes/Music/Dropbox/Documents/Matlab/jlab')
+% addpath('/Volumes/Music/Dropbox/Documents/Matlab/jlab')
 addpath('/Users/jearly/Dropbox/Documents/Matlab/jlab')
 addpath('../GLOceanKit/Matlab/')
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Drifter Spectra
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-load('/Users/jearly/Dropbox/Shared/Lilly-Sykulski-Early/MonopoleExperiment/QGDampedSlabTrajectories_Monopole.mat');
+folder = '/Volumes/Data/QGPlusSlab/TurbulenceExperimentNonStiff';
+file = 'QGDampedSlabTrajectories.mat';
+figure_out = sprintf('%s/DrifterSpectra.png',folder);
+
+load(sprintf('%s/%s',folder,file));
 
 numDrifters = size(xpos1,2);
 days = t/86400;
@@ -18,27 +27,14 @@ cv2 = (diff(xpos2,1,1) + sqrt(-1)*diff(ypos2,1,1))/dt;
 % convert from radians/second to cycles/day
 f=omega*86400/(2*pi);
 
+f_floats = [ flip(-f(2:end),1); f];
+S_floats = cat(1, flip(snn(2:end,:),1), spp);
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-% Spectrum
+% Slab Layer Spectrum
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-figure('Units', 'points', 'Position', [50 50 1000 400])
-set(gcf,'PaperPositionMode','auto')
-set(gcf, 'Color', 'w');
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Double the zero frequency for plotting purposes
-snn(1,:)=2*snn(1,:);
-spp(1,:)=2*spp(1,:);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-plot(f,spp),ylog
-hold on
-plot(-f,snn)
-
 
 % Read the winds
 file = 'winds.nc';
@@ -65,8 +61,29 @@ dt = time_wind(2)-time_wind(1);
 [omega,spp,snn,spn]=mspec(dt,cv_wind,psi);
 
 f=omega*86400/(2*pi);
-plot(f,spp, 'k', 'LineWidth', 2)
-plot(-f,snn, 'k', 'LineWidth', 2)
 
+f_slab = [ flip(-f(2:end),1); f];
+S_slab = [ flip(snn(2:end),1); spp];
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+figure('Units', 'points', 'Position', [50 50 1000 400])
+set(gcf,'PaperPositionMode','auto')
+set(gcf, 'Color', 'w');
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+plot(f_floats,S_floats)
+ylog
+hold on
+h_slab = plot(f_slab,S_slab, 'k', 'LineWidth', 2);
+set(gca,'FontSize', 16)
+title('Drifter Spectra from the QG+Damped Slab Model', 'FontSize', 28.0, 'FontName', 'Helvetica')
+xlabel('frequency (cycles per day)', 'FontSize', 20.0, 'FontName', 'Helvetica');
+ylabel('power (m^2/s)', 'FontSize', 20.0, 'FontName', 'Helvetica');
 xlim([-3 3])
 ylim([2e-2 3e4])
+legend(h_slab,{'Damped Slab Model'}, 'FontSize', 20.0, 'FontName', 'Helvetica')
+
+export_fig(figure_out, '-r150')

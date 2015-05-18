@@ -2,14 +2,14 @@ day = 300;
 
 %file = '/Users/jearly/Desktop/QGDampedSlab.nc';
 file = '/Volumes/Music/Model_Output/MonopoleExperiment/QGDampedSlab_Monopole.nc';
-file = '/Volumes/Music/Model_Output/TurbulenceExperimentLongDampNonStiff/QGDampedSlab.nc';
+file = '/Volumes/Data/QGPlusSlab/TurbulenceExperimentNonStiff/QGDampedSlab.nc';
 %output = '/Volumes/Music/Model_Output/QGDampedSlabTrajectories_Monopole.mat';
 t = ncread(file, 'time');
 x = ncread(file, 'x');
 y = ncread(file, 'y');
 
 t_days = t/86400;
-timeIndex = find( t_days <= day, 1, 'last');
+timeIndex = find( t_days-1 <= day, 1, 'last');
 
 % u = squeeze(ncread(file, 'u', [1 1 1], [1 1 timeIndex], [1 1 1]));
 % v = squeeze(ncread(file, 'v', [1 1 1], [1 1 timeIndex], [1 1 1]));
