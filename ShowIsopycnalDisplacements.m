@@ -30,7 +30,7 @@ theFigure = figure('Position', [50 50 1000 470]);
 theFigure.PaperPositionMode = 'auto';
 theFigure.Color = 'white';
 
-for timeIndex=1:48 %length(t_days)
+for timeIndex=545:length(t_days)
 
     eta1 = squeeze(ncread(file, 'eta-1', [1 1 timeIndex], [Inf Inf 1], [1 1 1]));
     eta2 = squeeze(ncread(file, 'eta-2', [1 1 timeIndex], [Inf Inf 1], [1 1 1]));
