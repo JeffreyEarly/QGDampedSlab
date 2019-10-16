@@ -7,11 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		8166A5932357AE7700DED74E /* GLOceanKit.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 8166A5922357AE7700DED74E /* GLOceanKit.dylib */; };
 		81674B3519D9DB45008FFFC5 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 81674B3419D9DB45008FFFC5 /* main.m */; };
 		81674B3C19D9DBF7008FFFC5 /* GLNumericalModelingKit.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 81674B3B19D9DBF7008FFFC5 /* GLNumericalModelingKit.dylib */; };
 		81674B4419D9DF71008FFFC5 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 81674B4319D9DF71008FFFC5 /* main.m */; };
 		81674B4819D9DFA8008FFFC5 /* GLNumericalModelingKit.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 81674B3B19D9DBF7008FFFC5 /* GLNumericalModelingKit.dylib */; };
-		817513D519F563EF009FE412 /* GLOceanKit.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 817513D419F563EF009FE412 /* GLOceanKit.dylib */; };
 		818772C119DB29A4007E5DA3 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 818772C019DB29A4007E5DA3 /* main.swift */; };
 		8187733819DB3364007E5DA3 /* GLNumericalModelingKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8187733719DB3364007E5DA3 /* GLNumericalModelingKit.framework */; };
 /* End PBXBuildFile section */
@@ -47,6 +47,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		8166A5922357AE7700DED74E /* GLOceanKit.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; path = GLOceanKit.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		81674B3119D9DB45008FFFC5 /* QGDampedSlab */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = QGDampedSlab; sourceTree = BUILT_PRODUCTS_DIR; };
 		81674B3419D9DB45008FFFC5 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		81674B3B19D9DBF7008FFFC5 /* GLNumericalModelingKit.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = GLNumericalModelingKit.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -64,7 +65,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				817513D519F563EF009FE412 /* GLOceanKit.dylib in Frameworks */,
+				8166A5932357AE7700DED74E /* GLOceanKit.dylib in Frameworks */,
 				81674B3C19D9DBF7008FFFC5 /* GLNumericalModelingKit.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -88,6 +89,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		8166A5912357AE7700DED74E /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				8166A5922357AE7700DED74E /* GLOceanKit.dylib */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		81674B2819D9DB45008FFFC5 = {
 			isa = PBXGroup;
 			children = (
@@ -99,6 +108,7 @@
 				818772BF19DB29A4007E5DA3 /* DampedSlabSwift */,
 				81674B3219D9DB45008FFFC5 /* Products */,
 				81674B3B19D9DBF7008FFFC5 /* GLNumericalModelingKit.dylib */,
+				8166A5912357AE7700DED74E /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -216,6 +226,7 @@
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				English,
 				en,
 			);
 			mainGroup = 81674B2819D9DB45008FFFC5;
@@ -344,6 +355,7 @@
 					"$(inherited)",
 					"$(USER_LIBRARY_DIR)/Developer/Xcode/DerivedData/MasterWorkspace-geajijycseerbtfvjkaodseclatk/Build/Products/Debug",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -360,6 +372,7 @@
 					"$(inherited)",
 					"$(USER_LIBRARY_DIR)/Developer/Xcode/DerivedData/MasterWorkspace-geajijycseerbtfvjkaodseclatk/Build/Products/Debug",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 10.15;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

@@ -30,7 +30,7 @@ int main (int argc, const char * argv[])
 		GLFloat dRho1 = 1E-4;
 		GLFloat dRho2 = 1E-3;
 		GLFloat latitude = 24;
-        ExperimentType experiment = kTurbulentExperimentType;
+        ExperimentType experiment = kMonopoleExperimentType;
 		WindsType winds = kPapaWinds;
 		
         GLFloat domainWidth = 1000e3; // m
@@ -184,7 +184,7 @@ int main (int argc, const char * argv[])
 		
 		if (winds == kPapaWinds) {
 			// If all goes well, the variable t will be identified as the coordinated variable and therefore turned into a dimension, leaving only u and v.
-			GLNetCDFFile *windsFile = [[GLNetCDFFile alloc] initWithURL: [NSURL URLWithString: @"/Users/jearly/Documents/Models/QGDampedSlab/winds.nc"] forEquation: equation];
+			GLNetCDFFile *windsFile = [[GLNetCDFFile alloc] initWithURL: [NSURL URLWithString: @"/Users/jearly/Documents/ProjectRepositories/QGDampedSlab/winds.nc"] forEquation: equation];
 			GLFunction *u_wind = windsFile.variables[0];
 			GLFunction *v_wind = windsFile.variables[1];
 			
@@ -293,7 +293,7 @@ int main (int argc, const char * argv[])
 		/************************************************************************************************/
 		
 		//GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [[NSURL fileURLWithPath: [NSSearchPathForDirectoriesInDomains(NSDesktopDirectory, NSUserDomainMask, YES) firstObject]] URLByAppendingPathComponent:@"QGDampedSlab.nc"] forEquation: equation overwriteExisting: YES];
-		GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [NSURL fileURLWithPath: @"/Volumes/Data/QGPlusSlab/TurbulenceExperimentNonStiff/QGDampedSlab.nc"] forEquation: equation overwriteExisting: YES];
+		GLNetCDFFile *netcdfFile = [[GLNetCDFFile alloc] initWithURL: [NSURL fileURLWithPath: @"/Users/jearly/Desktop/QGDampedSlab.nc"] forEquation: equation overwriteExisting: YES];
 		GLDimension *tDimND = [tDim scaledBy: 1./qg.T_QG translatedBy: 0.0 withUnits: @""];
 		
 		[qg addMetadataToNetCDFFile: netcdfFile];

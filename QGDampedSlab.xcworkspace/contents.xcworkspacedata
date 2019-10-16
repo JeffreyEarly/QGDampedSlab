@@ -2,7 +2,10 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "group:QGDampedSlab.xcodeproj">
+      location = "container:QGDampedSlab.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "container:../GLOceanKit/GLOceanKit.xcodeproj">
    </FileRef>
    <FileRef
       location = "container:../GLNumericalModelingKit/GLNumericalModelingKit.xcodeproj">
