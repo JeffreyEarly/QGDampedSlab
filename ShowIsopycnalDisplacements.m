@@ -1,8 +1,8 @@
-addpath('/Users/jearly/Dropbox/Documents/Matlab/jlab')
-addpath('../GLOceanKit/Matlab/')
+% addpath('/Users/jearly/Dropbox/Documents/Matlab/jlab')
+% addpath('../GLOceanKit/Matlab/')
 
-folder = '/Volumes/Data/QGPlusSlab/TurbulenceExperimentNonStiff';
-file = 'QGDampedSlab.nc';
+folder = '/Volumes/Samsung_T5/QGDampedSlab';
+file = 'QGDampedSlab_Monopole_Nonstiff.nc';
 file = sprintf('%s/%s',folder,file);
 framesFolder = sprintf('%s/DisplacementFrames',folder);
 
@@ -30,7 +30,7 @@ theFigure = figure('Position', [50 50 1000 470]);
 theFigure.PaperPositionMode = 'auto';
 theFigure.Color = 'white';
 
-for timeIndex=545:length(t_days)
+for timeIndex=1000:1000 %545:length(t_days)
 
     eta1 = squeeze(ncread(file, 'eta-1', [1 1 timeIndex], [Inf Inf 1], [1 1 1]));
     eta2 = squeeze(ncread(file, 'eta-2', [1 1 timeIndex], [Inf Inf 1], [1 1 1]));
